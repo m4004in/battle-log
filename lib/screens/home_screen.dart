@@ -124,15 +124,14 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(label,
-              style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
         ],
       ),
     );
   }
 
-  Widget _buildStatDivider() => Container(
-        width: 1, height: 28, color: const Color(0xFFF0F0F0));
+  Widget _buildStatDivider() =>
+      Container(width: 1, height: 28, color: const Color(0xFFF0F0F0));
 
   // ────────────────────────────────────────────────
   // 기록 카드 (Dismissible로 좌→삭제)
@@ -169,8 +168,8 @@ class HomeScreen extends StatelessWidget {
         return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: const Text(
               '기록 삭제',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
@@ -182,8 +181,7 @@ class HomeScreen extends StatelessWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('취소',
-                    style: TextStyle(color: Colors.grey)),
+                child: const Text('취소', style: TextStyle(color: Colors.grey)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -209,8 +207,8 @@ class HomeScreen extends StatelessWidget {
                 '"${record.tournamentName.isEmpty ? '대회' : record.tournamentName}" 기록이 삭제되었습니다.'),
             duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       },
@@ -231,93 +229,8 @@ class HomeScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // ── 카드 내용
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 헤더: 대회명 + 날짜 + 전적 배지
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                record.tournamentName.isEmpty
-                                    ? '대회명 없음'
-                                    : record.tournamentName,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1A1A1A),
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                DateFormat('yyyy.MM.dd').format(record.date),
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        ),
-                        _buildWinLoseBadge(
-                            record.totalWins,
-                            record.totalLoses,
-                            record.totalDraws),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // 내 덱 정보
-                    Row(
-                      children: [
-                        ...record.myPokemonIds.take(3).map((id) {
-                          final p = allPokemon.firstWhere(
-                            (p) => p.id == id,
-                            orElse: () => const PokemonInfo(
-                                id: 1,
-                                name: 'bulbasaur',
-                                nameKo: '이상해씨'),
-                          );
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 3),
-                            child: _buildMiniAvatar(p.spriteUrl),
-                          );
-                        }),
-                        if (record.myPokemonIds.isNotEmpty)
-                          const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            record.myDeckName.isEmpty
-                                ? '덱 미설정'
-                                : record.myDeckName,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: record.myDeckName.isEmpty
-                                  ? Colors.grey[400]
-                                  : const Color(0xFF444444),
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Icon(Icons.chevron_right,
-                            size: 16, color: Colors.grey),
-                      ],
-                    ),
-                    if (record.rounds.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      const Divider(
-                          height: 1, color: Color(0xFFF0F0F0)),
-                      const SizedBox(height: 10),
-                      _buildRoundPreview(record),
-                    ],
-                  ],
-                ),
-              ),
+              // ── 카드 내용 (배틀 로그 스타일)
+              _buildCardBody(record),
               // ── 슬라이드 힌트 표시줄
               Container(
                 width: double.infinity,
@@ -330,8 +243,7 @@ class HomeScreen extends StatelessWidget {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Icon(Icons.swipe_left,
-                        size: 13, color: Color(0xFFEF4444)),
+                    Icon(Icons.swipe_left, size: 13, color: Color(0xFFEF4444)),
                     SizedBox(width: 4),
                     Text(
                       '← 밀어서 삭제',
@@ -352,194 +264,260 @@ class HomeScreen extends StatelessWidget {
   }
 
   // ────────────────────────────────────────────────
-  // 라운드 미리보기 (세로)
+  // 기록 카드 본문 (타사이트 배틀 로그 스타일)
   // ────────────────────────────────────────────────
-  Widget _buildRoundPreview(TournamentRecord record) {
+  static const Color _kInk = Color(0xFF0F172A);
+  static const Color _kSlate = Color(0xFF64748B);
+
+  List<PokemonInfo> _pokemonOf(List<int> ids) {
+    return ids
+        .map((id) {
+          try {
+            return allPokemon.firstWhere((p) => p.id == id);
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<PokemonInfo>()
+        .toList();
+  }
+
+  Widget _buildCardBody(TournamentRecord record) {
+    final w = record.totalWins;
+    final l = record.totalLoses;
+    final d = record.totalDraws;
+    final total = w + l + d;
+    final rate = total > 0 ? (w / total * 100).toStringAsFixed(0) : '0';
+    final recordText = d > 0 ? '$w-$l-$d' : '$w-$l';
+    final myPokemons = _pokemonOf(record.myPokemonIds);
+
     return Column(
-      children: record.rounds.asMap().entries.map((e) {
-        final idx = e.key;
-        final round = e.value;
-        final roundResult = round.roundResult;
-
-        final opponentPokemons = round.opponentPokemonIds
-            .map((id) {
-              try {
-                return allPokemon.firstWhere((p) => p.id == id);
-              } catch (_) {
-                return null;
-              }
-            })
-            .whereType<PokemonInfo>()
-            .toList();
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 헤더: 큰 대회명 / 큰 전적
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 라운드 번호
-              SizedBox(
-                width: 28,
-                child: Text(
-                  'R${idx + 1}',
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey),
-                ),
-              ),
-              const SizedBox(width: 4),
-              // 개별 게임 결과 아이콘 — 색깔만, 텍스트 없음
-              ...round.games.map((game) {
-                final Color dotColor;
-                if (game.result == MatchResult.win) {
-                  dotColor = const Color(0xFF22C55E);
-                } else if (game.result == MatchResult.lose) {
-                  dotColor = const Color(0xFFEF4444);
-                } else if (game.result == MatchResult.draw) {
-                  dotColor = const Color(0xFFF59E0B);
-                } else {
-                  dotColor = const Color(0xFFDDDDDD);
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: dotColor,
-                      shape: BoxShape.circle,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      record.tournamentName.isEmpty
+                          ? '대회명 없음'
+                          : record.tournamentName,
+                      style: const TextStyle(
+                        fontSize: 21,
+                        height: 1.2,
+                        fontWeight: FontWeight.w800,
+                        color: _kInk,
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
-                );
-              }),
-              // 라운드 최종 결과 배지
-              Container(
-                margin: const EdgeInsets.only(left: 2, right: 6),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: roundResult == MatchResult.win
-                      ? const Color(0xFF22C55E).withValues(alpha: 0.12)
-                      : roundResult == MatchResult.lose
-                          ? const Color(0xFFEF4444).withValues(alpha: 0.12)
-                          : roundResult == MatchResult.draw
-                              ? const Color(0xFFF59E0B)
-                                  .withValues(alpha: 0.12)
-                              : const Color(0xFFF0F0F0),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  roundResult == MatchResult.win
-                      ? '승'
-                      : roundResult == MatchResult.lose
-                          ? '패'
-                          : roundResult == MatchResult.draw
-                              ? '무'
-                              : '−',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: roundResult == MatchResult.win
-                        ? const Color(0xFF22C55E)
-                        : roundResult == MatchResult.lose
-                            ? const Color(0xFFEF4444)
-                            : roundResult == MatchResult.draw
-                                ? const Color(0xFFF59E0B)
-                                : Colors.grey,
-                  ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${DateFormat('yyyy.MM.dd').format(record.date)}  ·  승률 $rate%',
+                      style: const TextStyle(fontSize: 13, color: _kSlate),
+                    ),
+                    if (record.myDeckName.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        record.myDeckName,
+                        style: const TextStyle(fontSize: 12, color: _kSlate),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              // 상대 덱 이름
-              if (round.opponentDeckName.isNotEmpty)
-                Expanded(
-                  child: Text(
-                    round.opponentDeckName,
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    recordText,
                     style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF555555)),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                )
-              else
-                const Spacer(),
-              // 상대 포켓몬 아이콘
-              ...opponentPokemons.take(3).map(
-                    (p) => Padding(
-                      padding: const EdgeInsets.only(left: 3),
-                      child: _buildMiniAvatar(p.spriteUrl, size: 26),
+                      fontSize: 26,
+                      height: 1.1,
+                      fontWeight: FontWeight.w800,
+                      color: _kInk,
+                      letterSpacing: -0.5,
                     ),
                   ),
+                  if (myPokemons.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: myPokemons
+                          .take(3)
+                          .map((p) => _buildSprite(p.spriteUrl, size: 40))
+                          .toList(),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
-        );
-      }).toList(),
+        ),
+        if (record.rounds.isNotEmpty) ...[
+          // 표 헤더: Round / Deck / Result
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 56,
+                  child: Text('라운드',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: _kSlate,
+                          fontWeight: FontWeight.w500)),
+                ),
+                Expanded(
+                  child: Text('덱',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: _kSlate,
+                          fontWeight: FontWeight.w500)),
+                ),
+                Text('결과',
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: _kSlate,
+                        fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          // 라운드 행: 승=연초록 / 패=연빨강 / 무=연노랑
+          ...record.rounds
+              .asMap()
+              .entries
+              .map((e) => _buildRoundRow(e.key, e.value)),
+        ],
+        const SizedBox(height: 10),
+      ],
     );
   }
 
-  Widget _buildMiniAvatar(String url, {double size = 30}) {
+  Widget _buildRoundRow(int idx, RoundRecord round) {
+    final result = round.roundResult;
+    final Color bg;
+    final Color fg;
+    switch (result) {
+      case MatchResult.win:
+        bg = const Color(0xFFD9F8E7);
+        fg = const Color(0xFF059669);
+        break;
+      case MatchResult.lose:
+        bg = const Color(0xFFFFE0E0);
+        fg = const Color(0xFFDC2626);
+        break;
+      case MatchResult.draw:
+        bg = const Color(0xFFFEF3C7);
+        fg = const Color(0xFFD97706);
+        break;
+      case MatchResult.none:
+        bg = const Color(0xFFF3F4F6);
+        fg = const Color(0xFF9CA3AF);
+        break;
+    }
+
+    final letters = round.games.map((g) {
+      switch (g.result) {
+        case MatchResult.win:
+          return 'W';
+        case MatchResult.lose:
+          return 'L';
+        case MatchResult.draw:
+          return 'D';
+        case MatchResult.none:
+          return '-';
+      }
+    }).join();
+
+    final opponents = _pokemonOf(round.opponentPokemonIds);
+
     return Container(
-      width: size,
-      height: size,
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFFE8E8E8), width: 1),
-      ),
-      child: ClipOval(
-        child: CachedNetworkImage(
-          imageUrl: url,
-          fit: BoxFit.contain,
-          placeholder: (c, u) => const SizedBox(),
-          errorWidget: (c, u, e) => Icon(
-            Icons.catching_pokemon,
-            size: size * 0.5,
-            color: Colors.grey[400],
-          ),
+        color: bg,
+        border: Border(
+          bottom:
+              BorderSide(color: Colors.white.withValues(alpha: 0.7), width: 1),
         ),
       ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 56,
+            child: Text(
+              '${idx + 1}',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: fg,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (opponents.isNotEmpty)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: opponents
+                        .take(3)
+                        .map((p) => _buildSprite(p.spriteUrl, size: 44))
+                        .toList(),
+                  ),
+                if (round.opponentDeckName.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.zero,
+                    child: Text(
+                      round.opponentDeckName,
+                      style: const TextStyle(fontSize: 11, color: _kSlate),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Text(
+            letters,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: fg,
+              letterSpacing: 2,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // 승/무/패 + 승률 — 배지 없이 색상만
-  Widget _buildWinLoseBadge(int wins, int loses, int draws) {
-    final total = wins + loses + draws;
-    final winRate = total > 0 ? (wins / total * 100).toStringAsFixed(0) : '0';
-
-    return Row(children: [
-      // 승
-      Text('$wins', style: const TextStyle(
-          fontSize: 13, fontWeight: FontWeight.w800,
-          color: Color(0xFF22C55E))),
-      const Text('승', style: TextStyle(
-          fontSize: 11, color: Color(0xFF22C55E),
-          fontWeight: FontWeight.w500)),
-      const SizedBox(width: 4),
-      // 무 (있을 때만)
-      if (draws > 0) ...[
-        Text('$draws', style: const TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w800,
-            color: Color(0xFFF59E0B))),
-        const Text('무', style: TextStyle(
-            fontSize: 11, color: Color(0xFFF59E0B),
-            fontWeight: FontWeight.w500)),
-        const SizedBox(width: 4),
-      ],
-      // 패
-      Text('$loses', style: const TextStyle(
-          fontSize: 13, fontWeight: FontWeight.w800,
-          color: Color(0xFFEF4444))),
-      const Text('패', style: TextStyle(
-          fontSize: 11, color: Color(0xFFEF4444),
-          fontWeight: FontWeight.w500)),
-      const SizedBox(width: 6),
-      // 구분선
-      Container(width: 1, height: 12, color: const Color(0xFFE0E0E0)),
-      const SizedBox(width: 6),
-      // 승률
-      Text('$winRate%', style: const TextStyle(
-          fontSize: 13, fontWeight: FontWeight.w800,
-          color: Color(0xFF8B5CF6))),
-    ]);
+  // 배경 없는 도트 스프라이트 (픽셀 선명하게)
+  Widget _buildSprite(String url, {double size = 44}) {
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.none,
+      placeholder: (c, u) => SizedBox(width: size, height: size),
+      errorWidget: (c, u, e) => SizedBox(
+        width: size,
+        height: size,
+        child: Icon(Icons.catching_pokemon,
+            size: size * 0.5, color: Colors.grey[400]),
+      ),
+    );
   }
 
   // ────────────────────────────────────────────────
@@ -572,8 +550,8 @@ class HomeScreen extends StatelessWidget {
           Text(
             '+ 새 기록 버튼을 눌러\n대회 기록을 시작하세요!',
             textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 14, color: Colors.grey[500], height: 1.5),
+            style:
+                TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.5),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -581,8 +559,7 @@ class HomeScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEF4444),
               foregroundColor: Colors.white,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
               elevation: 0,
@@ -608,8 +585,7 @@ class HomeScreen extends StatelessWidget {
     final result = await Navigator.push<TournamentRecord>(
       context,
       MaterialPageRoute(
-        builder: (ctx) =>
-            RecordEditScreen(record: newRecord, isNew: true),
+        builder: (ctx) => RecordEditScreen(record: newRecord, isNew: true),
       ),
     );
     if (result != null && context.mounted) {
