@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -6,49 +9,31 @@ import '../providers/tournament_provider.dart';
 import '../models/tournament_record.dart';
 import '../data/pokemon_data.dart';
 import 'record_edit_screen.dart';
+import '../utils/image_saver.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _selecting = false;
+  bool _exporting = false;
+  final Set<String> _selected = {};
+
+  @override
   Widget build(BuildContext context) {
+    final provider = context.watch<TournamentProvider>();
+    final records = provider.records;
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: const BoxDecoration(
-                color: Color(0xFFEF4444),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.catching_pokemon,
-                  size: 16, color: Colors.white),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'Battle Log',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF1A1A1A),
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: const Color(0xFFF0F0F0)),
-        ),
-      ),
-      body: Consumer<TournamentProvider>(
-        builder: (ctx, provider, _) {
-          final records = provider.records;
+      appBar: _selecting
+          ? _buildSelectAppBar(records)
+          : _buildNormalAppBar(records),
+      body: Builder(
+        builder: (ctx) {
           if (records.isEmpty) {
             return _buildEmptyState(context);
           }
@@ -57,28 +42,225 @@ class HomeScreen extends StatelessWidget {
               _buildStatsHeader(records),
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                  padding: EdgeInsets.fromLTRB(
+                      _selecting ? 8 : 16, 12, 16, _selecting ? 24 : 40),
                   itemCount: records.length,
-                  itemBuilder: (ctx, i) =>
-                      _buildRecordCard(context, records[i], provider),
+                  itemBuilder: (ctx, i) {
+                    final r = records[i];
+                    final card = _buildRecordCard(context, r, provider);
+                    if (!_selecting) return card;
+                    final on = _selected.contains(r.id);
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _toggleSelect(r.id),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 18, 8, 0),
+                            child: Icon(
+                              on
+                                  ? Icons.check_circle
+                                  : Icons.radio_button_unchecked,
+                              size: 28,
+                              color: on
+                                  ? const Color(0xFFEF4444)
+                                  : const Color(0xFFCBD5E1),
+                            ),
+                          ),
+                        ),
+                        Expanded(child: card),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _createNewRecord(context),
-        backgroundColor: const Color(0xFFEF4444),
-        foregroundColor: Colors.white,
-        elevation: 2,
-        icon: const Icon(Icons.add, size: 20),
-        label: const Text(
-          '새 기록',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+      bottomNavigationBar: _selecting
+          ? SafeArea(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(top: BorderSide(color: Color(0xFFF0F0F0))),
+                ),
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: _selected.isEmpty || _exporting
+                        ? null
+                        : () => _confirmAndSave(records),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF4444),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFFE5E7EB),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.download_rounded, size: 20),
+                    label: Text(
+                      _selected.isEmpty
+                          ? '저장할 대회를 선택하세요'
+                          : '선택한 로그 이미지로 저장 (${_selected.length})',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 15),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : null,
+    );
+  }
+
+  // ────────────────────────────────────────────────
+  // 앱바
+  // ────────────────────────────────────────────────
+  PreferredSizeWidget _buildNormalAppBar(List<TournamentRecord> records) {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      titleSpacing: 16,
+      title: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: const BoxDecoration(
+              color: Color(0xFFEF4444),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.catching_pokemon,
+                size: 16, color: Colors.white),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'Battle Log',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF1A1A1A),
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(width: 10),
+          _appBarChip(
+            icon: Icons.add,
+            label: '새 기록',
+            filled: true,
+            onTap: () => _createNewRecord(context),
+          ),
+          if (records.isNotEmpty) ...[
+            const SizedBox(width: 6),
+            _appBarChip(
+              icon: Icons.download_rounded,
+              label: '저장',
+              filled: false,
+              onTap: () => setState(() {
+                _selecting = true;
+                _selected.clear();
+              }),
+            ),
+          ],
+        ],
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(height: 1, color: const Color(0xFFF0F0F0)),
+      ),
+    );
+  }
+
+  Widget _appBarChip({
+    required IconData icon,
+    required String label,
+    required bool filled,
+    required VoidCallback onTap,
+  }) {
+    const red = Color(0xFFEF4444);
+    return Material(
+      color: filled ? red : Colors.white,
+      shape: StadiumBorder(
+        side: BorderSide(color: filled ? red : const Color(0xFFE2E8F0)),
+      ),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 15, color: filled ? Colors.white : _kInk),
+              const SizedBox(width: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: filled ? Colors.white : _kInk,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  PreferredSizeWidget _buildSelectAppBar(List<TournamentRecord> records) {
+    final allOn = records.isNotEmpty && _selected.length == records.length;
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: _exporting ? null : _exitSelect,
+      ),
+      title: Text(
+        _selected.isEmpty ? '저장할 대회 선택' : '${_selected.length}개 선택됨',
+        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _exporting
+              ? null
+              : () => setState(() {
+                    if (allOn) {
+                      _selected.clear();
+                    } else {
+                      _selected
+                        ..clear()
+                        ..addAll(records.map((r) => r.id));
+                    }
+                  }),
+          child: Text(allOn ? '전체 해제' : '전체 선택',
+              style: const TextStyle(
+                  color: Color(0xFFEF4444), fontWeight: FontWeight.w700)),
+        ),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(height: 1, color: const Color(0xFFF0F0F0)),
+      ),
+    );
+  }
+
+  void _toggleSelect(String id) {
+    setState(() {
+      if (!_selected.add(id)) _selected.remove(id);
+    });
+  }
+
+  void _exitSelect() {
+    setState(() {
+      _selecting = false;
+      _selected.clear();
+    });
   }
 
   // ────────────────────────────────────────────────
@@ -140,7 +322,8 @@ class HomeScreen extends StatelessWidget {
       TournamentProvider provider) {
     return Dismissible(
       key: ValueKey(record.id),
-      direction: DismissDirection.endToStart,
+      direction:
+          _selecting ? DismissDirection.none : DismissDirection.endToStart,
       background: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
@@ -213,9 +396,18 @@ class HomeScreen extends StatelessWidget {
         );
       },
       child: GestureDetector(
-        onTap: () => _editRecord(context, record, provider),
+        onTap: () => _selecting
+            ? _toggleSelect(record.id)
+            : _editRecord(context, record, provider),
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),
+          foregroundDecoration: _selecting && _selected.contains(record.id)
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border:
+                      Border.all(color: const Color(0xFFEF4444), width: 2.5),
+                )
+              : null,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
@@ -604,6 +796,167 @@ class HomeScreen extends StatelessWidget {
     );
     if (result != null && context.mounted) {
       await provider.updateRecord(result);
+    }
+  }
+
+  // ────────────────────────────────────────────────
+  // 이미지 저장
+  // ────────────────────────────────────────────────
+  Future<void> _confirmAndSave(List<TournamentRecord> records) async {
+    final targets = records.where((r) => _selected.contains(r.id)).toList();
+    if (targets.isEmpty) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('저장하시겠습니까?',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+        content: Text(
+          '선택한 ${targets.length}개의 대회 로그를\n이미지(PNG)로 저장합니다.',
+          style: const TextStyle(fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('아니오', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child:
+                const Text('예', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _exporting = true);
+    // 진행 표시
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const PopScope(
+        canPop: false,
+        child: Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 28, vertical: 22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFFEF4444)),
+                  SizedBox(height: 14),
+                  Text('이미지 만드는 중...',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.none,
+                          color: Colors.black87)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    int saved = 0;
+    try {
+      for (final r in targets) {
+        final bytes = await _captureRecord(r);
+        if (bytes == null) continue;
+        final ok2 = await savePngImage(bytes, _fileNameOf(r));
+        if (ok2) saved++;
+        await Future.delayed(const Duration(milliseconds: 400));
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop(); // 진행 다이얼로그
+    setState(() => _exporting = false);
+    if (saved > 0) _exitSelect();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(saved > 0
+            ? '$saved개의 대회 로그를 이미지로 저장했습니다.'
+            : '이미지 저장에 실패했습니다. (브라우저에서만 지원됩니다)'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  String _fileNameOf(TournamentRecord r) {
+    final name =
+        r.tournamentName.trim().isEmpty ? 'battlelog' : r.tournamentName.trim();
+    final safe = name.replaceAll(RegExp(r'[\\/:*?"<>|\s]+'), '_');
+    return 'battlelog_${safe}_${DateFormat('yyyyMMdd').format(r.date)}.png';
+  }
+
+  /// 화면 밖에 카드를 그려서 PNG로 캡처
+  Future<Uint8List?> _captureRecord(TournamentRecord r) async {
+    // 스프라이트 미리 로드
+    final urls = <String>{
+      ..._pokemonOf(r.myPokemonIds).map((p) => p.spriteUrl),
+      for (final round in r.rounds)
+        ..._pokemonOf(round.opponentPokemonIds).map((p) => p.spriteUrl),
+    };
+    await Future.wait(urls.map((u) async {
+      try {
+        await precacheImage(CachedNetworkImageProvider(u), context)
+            .timeout(const Duration(seconds: 8));
+      } catch (_) {}
+    }));
+    if (!mounted) return null;
+
+    final key = GlobalKey();
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final entry = OverlayEntry(
+      builder: (_) => Positioned(
+        left: -3000,
+        top: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: RepaintBoundary(
+            key: key,
+            child: Container(
+              width: 420,
+              color: const Color(0xFFF5F5F7),
+              padding: const EdgeInsets.all(16),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: _buildCardBody(r),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(entry);
+    try {
+      await Future.delayed(const Duration(milliseconds: 900));
+      await WidgetsBinding.instance.endOfFrame;
+      final boundary =
+          key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+      final image = await boundary.toImage(pixelRatio: 3);
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      return data?.buffer.asUint8List();
+    } finally {
+      entry.remove();
     }
   }
 }
