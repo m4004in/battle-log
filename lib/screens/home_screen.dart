@@ -648,15 +648,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final opponents = _pokemonOf(round.opponentPokemonIds);
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 60),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border(
-          bottom:
-              BorderSide(color: Colors.white.withValues(alpha: 0.7), width: 1),
-        ),
-      ),
+      constraints: const BoxConstraints(minHeight: 58),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      color: bg,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
