@@ -352,7 +352,10 @@ class HomeScreen extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: myPokemons
                           .take(3)
-                          .map((p) => _buildSprite(p.spriteUrl, size: 40))
+                          .map((p) => Align(
+                                widthFactor: 0.78,
+                                child: _buildSprite(p.spriteUrl, size: 64),
+                              ))
                           .toList(),
                     ),
                   ],
@@ -445,7 +448,7 @@ class HomeScreen extends StatelessWidget {
     final opponents = _pokemonOf(round.opponentPokemonIds);
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 64),
+      constraints: const BoxConstraints(minHeight: 72),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
@@ -476,7 +479,7 @@ class HomeScreen extends StatelessWidget {
                     .take(3)
                     .map((p) => Align(
                           widthFactor: 0.78,
-                          child: _buildSprite(p.spriteUrl, size: 56),
+                          child: _buildSprite(p.spriteUrl, size: 64),
                         ))
                     .toList(),
               ),
