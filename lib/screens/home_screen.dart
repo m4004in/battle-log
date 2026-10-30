@@ -9,6 +9,7 @@ import '../providers/tournament_provider.dart';
 import '../models/tournament_record.dart';
 import '../data/pokemon_data.dart';
 import 'record_edit_screen.dart';
+import 'calendar_screen.dart';
 import '../utils/image_saver.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -154,6 +155,13 @@ class _HomeScreenState extends State<HomeScreen> {
             filled: true,
             onTap: () => _createNewRecord(context),
           ),
+          const SizedBox(width: 6),
+          _appBarChip(
+            icon: Icons.calendar_month_rounded,
+            label: '월별',
+            filled: false,
+            onTap: () => _openCalendar(context),
+          ),
           if (records.isNotEmpty) ...[
             const SizedBox(width: 6),
             _appBarChip(
@@ -191,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
         customBorder: const StadiumBorder(),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -784,6 +792,33 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result != null && context.mounted) {
       await context.read<TournamentProvider>().addRecord(result);
     }
+  }
+
+  void _openCalendar(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => CalendarScreen(
+          cardBuilder: (r) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: _buildCardBody(r),
+          ),
+          onEdit: (c, r) => _editRecord(c, r, c.read<TournamentProvider>()),
+        ),
+      ),
+    );
   }
 
   Future<void> _editRecord(BuildContext context, TournamentRecord record,

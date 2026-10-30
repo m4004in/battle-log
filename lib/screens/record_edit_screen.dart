@@ -522,10 +522,8 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                             ),
                             const SizedBox(height: 4),
                             GestureDetector(
-                              onTap: () =>
-                                  _toggleGameResult(roundIndex, e.key),
-                              child:
-                                  _buildGameResultButton(e.value.result),
+                              onTap: () => _toggleGameResult(roundIndex, e.key),
+                              child: _buildGameResultButton(e.value.result),
                             ),
                           ],
                         ),
@@ -698,8 +696,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
             style: TextStyle(
                 fontSize: 11, color: color, fontWeight: FontWeight.w700)),
         const SizedBox(width: 3),
-        Text(label,
-            style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
       ],
     );
   }

@@ -61,8 +61,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
   void initState() {
     super.initState();
     _selectedIds = List.from(widget.selectedIds);
-    _tabController =
-        TabController(length: _generations.length, vsync: this);
+    _tabController = TabController(length: _generations.length, vsync: this);
   }
 
   @override
@@ -130,8 +129,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: '이름 또는 번호로 검색...',
-                  hintStyle:
-                      TextStyle(color: Colors.grey[400], fontSize: 13),
+                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
                   prefixIcon:
                       Icon(Icons.search, color: Colors.grey[400], size: 18),
                   suffixIcon: _search.isNotEmpty
@@ -400,9 +398,8 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                     p.nameKo,
                     style: TextStyle(
                       fontSize: 10,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w400,
                       color: isSelected
                           ? const Color(0xFFEF4444)
                           : const Color(0xFF555555),
@@ -414,8 +411,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                 ),
                 Text(
                   '#${p.id.toString().padLeft(4, '0')}',
-                  style:
-                      const TextStyle(fontSize: 9, color: Colors.grey),
+                  style: const TextStyle(fontSize: 9, color: Colors.grey),
                 ),
               ],
             ),
