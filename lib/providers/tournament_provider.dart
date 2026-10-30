@@ -19,13 +19,24 @@ class TournamentProvider extends ChangeNotifier {
       final jsonStr = prefs.getString(_storageKey);
       if (jsonStr != null) {
         final List<dynamic> jsonList = jsonDecode(jsonStr);
-        _records = jsonList.map((j) => TournamentRecord.fromJson(j)).toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        _records = jsonList.map((j) => TournamentRecord.fromJson(j)).toList();
+        _sortRecords();
         notifyListeners();
       }
     } catch (e) {
       debugPrint('Error loading records: $e');
     }
+  }
+
+  // 대회 날짜 최신순 정렬 (같은 날짜면 나중에 만든 기록이 위)
+  void _sortRecords() {
+    _records.sort((a, b) {
+      final ad = DateTime(a.date.year, a.date.month, a.date.day);
+      final bd = DateTime(b.date.year, b.date.month, b.date.day);
+      final c = bd.compareTo(ad);
+      if (c != 0) return c;
+      return b.createdAt.compareTo(a.createdAt);
+    });
   }
 
   Future<void> _saveRecords() async {
@@ -39,7 +50,8 @@ class TournamentProvider extends ChangeNotifier {
   }
 
   Future<void> addRecord(TournamentRecord record) async {
-    _records.insert(0, record);
+    _records.add(record);
+    _sortRecords();
     await _saveRecords();
     notifyListeners();
   }
@@ -48,6 +60,7 @@ class TournamentProvider extends ChangeNotifier {
     final index = _records.indexWhere((r) => r.id == record.id);
     if (index != -1) {
       _records[index] = record;
+      _sortRecords();
       await _saveRecords();
       notifyListeners();
     }
