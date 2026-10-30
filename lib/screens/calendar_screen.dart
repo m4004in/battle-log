@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/tournament_provider.dart';
 import '../models/tournament_record.dart';
@@ -26,8 +27,6 @@ class CalendarScreen extends StatefulWidget {
 
 class _CalendarScreenState extends State<CalendarScreen> {
   static const int _basePage = 1200;
-  static const Color _kInk = Color(0xFF0F172A);
-  static const Color _kSlate = Color(0xFF64748B);
   static const Color _kRed = Color(0xFFEF4444);
   static const List<String> _weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -112,19 +111,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.cSurface,
         elevation: 0,
         leading: IconButton(
           tooltip: '뒤로가기',
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: const Text(
+        title: Text(
           '월별 기록',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF1A1A1A),
+            color: context.cInk,
             letterSpacing: -0.5,
           ),
         ),
@@ -136,20 +135,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 color: isCurrentMonth &&
                         _selected != null &&
                         _sameDay(_selected!, _now)
-                    ? const Color(0xFFF1F5F9)
+                    ? context.cFill
                     : Colors.white,
-                shape: const StadiumBorder(
-                    side: BorderSide(color: Color(0xFFE2E8F0))),
+                shape: StadiumBorder(side: BorderSide(color: context.cBorder)),
                 child: InkWell(
                   customBorder: const StadiumBorder(),
                   onTap: _goToday,
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     child: Text('오늘',
                         style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
-                            color: _kInk)),
+                            color: context.cInk)),
                   ),
                 ),
               ),
@@ -158,7 +157,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: const Color(0xFFF0F0F0)),
+          child: Container(height: 1, color: context.cLine),
         ),
       ),
       body: Column(
@@ -188,19 +187,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+          Divider(height: 1, color: context.cLine),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Row(
               children: [
                 Text(listTitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
-                        color: _kInk)),
+                        color: context.cInk)),
                 const SizedBox(width: 6),
                 Text('${shown.length}개',
-                    style: const TextStyle(fontSize: 13, color: _kSlate)),
+                    style: TextStyle(fontSize: 13, color: context.cSlate)),
               ],
             ),
           ),
@@ -245,17 +244,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
           IconButton(
             tooltip: '이전 달',
             icon: const Icon(Icons.chevron_left_rounded, size: 30),
-            color: _kInk,
+            color: context.cInk,
             onPressed: () => _goTo(_page - 1),
           ),
           Expanded(
             child: Center(
               child: Text(
                 '${month.year}년 ${month.month}월',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: _kInk,
+                  color: context.cInk,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -264,7 +263,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           IconButton(
             tooltip: '다음 달',
             icon: const Icon(Icons.chevron_right_rounded, size: 30),
-            color: _kInk,
+            color: context.cInk,
             onPressed: () => _goTo(_page + 1),
           ),
         ],
@@ -281,7 +280,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ? const Color(0xFFEF4444)
               : i == 6
                   ? const Color(0xFF3B82F6)
-                  : _kSlate;
+                  : context.cSlate;
           return Expanded(
             child: Center(
               child: Text(_weekdays[i],
@@ -334,7 +333,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ? const Color(0xFFEF4444)
         : col == 6
             ? const Color(0xFF3B82F6)
-            : _kInk;
+            : context.cInk;
     if (isSel) numColor = Colors.white;
 
     return Padding(

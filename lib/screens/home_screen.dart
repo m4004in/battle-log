@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -66,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               size: 28,
                               color: on
                                   ? const Color(0xFFEF4444)
-                                  : const Color(0xFFCBD5E1),
+                                  : context.cBorder,
                             ),
                           ),
                         ),
@@ -84,9 +85,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ? SafeArea(
               child: Container(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(top: BorderSide(color: Color(0xFFF0F0F0))),
+                decoration: BoxDecoration(
+                  color: context.cSurface,
+                  border: Border(top: BorderSide(color: context.cLine)),
                 ),
                 child: SizedBox(
                   height: 48,
@@ -123,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ────────────────────────────────────────────────
   PreferredSizeWidget _buildNormalAppBar(List<TournamentRecord> records) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: context.cSurface,
       elevation: 0,
       titleSpacing: 16,
       title: Row(
@@ -139,12 +140,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 size: 16, color: Colors.white),
           ),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'Battle Log',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF1A1A1A),
+              color: context.cInk,
               letterSpacing: -0.5,
             ),
           ),
@@ -176,9 +177,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ],
       ),
+      actions: const [ThemeBulbButton(), SizedBox(width: 4)],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: const Color(0xFFF0F0F0)),
+        child: Container(height: 1, color: context.cLine),
       ),
     );
   }
@@ -191,9 +193,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     const red = Color(0xFFEF4444);
     return Material(
-      color: filled ? red : Colors.white,
+      color: filled ? red : context.cSurface,
       shape: StadiumBorder(
-        side: BorderSide(color: filled ? red : const Color(0xFFE2E8F0)),
+        side: BorderSide(color: filled ? red : context.cBorder),
       ),
       child: InkWell(
         customBorder: const StadiumBorder(),
@@ -203,14 +205,14 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 15, color: filled ? Colors.white : _kInk),
+              Icon(icon, size: 15, color: filled ? Colors.white : context.cInk),
               const SizedBox(width: 3),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
-                  color: filled ? Colors.white : _kInk,
+                  color: filled ? Colors.white : context.cInk,
                 ),
               ),
             ],
@@ -223,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
   PreferredSizeWidget _buildSelectAppBar(List<TournamentRecord> records) {
     final allOn = records.isNotEmpty && _selected.length == records.length;
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: context.cSurface,
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.close),
@@ -253,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: const Color(0xFFF0F0F0)),
+        child: Container(height: 1, color: context.cLine),
       ),
     );
   }
@@ -282,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
     double winRate = total > 0 ? totalWins / total * 100 : 0;
 
     return Container(
-      color: Colors.white,
+      color: context.cSurface,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
@@ -321,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStatDivider() =>
-      Container(width: 1, height: 28, color: const Color(0xFFF0F0F0));
+      Container(width: 1, height: 28, color: context.cLine);
 
   // ────────────────────────────────────────────────
   // 기록 카드 (Dismissible로 좌→삭제)
@@ -417,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
               : null,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cSurface,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
@@ -435,10 +437,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFEF2F2),
+                decoration: BoxDecoration(
+                  color: context.cTint,
                   borderRadius:
-                      BorderRadius.vertical(bottom: Radius.circular(14)),
+                      const BorderRadius.vertical(bottom: Radius.circular(14)),
                 ),
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -466,8 +468,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // ────────────────────────────────────────────────
   // 기록 카드 본문 (타사이트 배틀 로그 스타일)
   // ────────────────────────────────────────────────
-  static const Color _kInk = Color(0xFF0F172A);
-  static const Color _kSlate = Color(0xFF64748B);
 
   List<PokemonInfo> _pokemonOf(List<int> ids) {
     return ids
@@ -508,24 +508,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       record.tournamentName.isEmpty
                           ? '대회명 없음'
                           : record.tournamentName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 21,
                         height: 1.2,
                         fontWeight: FontWeight.w800,
-                        color: _kInk,
+                        color: context.cInk,
                         letterSpacing: -0.5,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       '${DateFormat('yyyy.MM.dd').format(record.date)}  ·  승률 $rate%',
-                      style: const TextStyle(fontSize: 13, color: _kSlate),
+                      style: TextStyle(fontSize: 13, color: context.cSlate),
                     ),
                     if (record.myDeckName.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         record.myDeckName,
-                        style: const TextStyle(fontSize: 12, color: _kSlate),
+                        style: TextStyle(fontSize: 12, color: context.cSlate),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -538,11 +538,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     recordText,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 26,
                       height: 1.1,
                       fontWeight: FontWeight.w800,
-                      color: _kInk,
+                      color: context.cInk,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -566,8 +566,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         if (record.rounds.isNotEmpty) ...[
           // 표 헤더: Round / Deck / Result
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
             child: Row(
               children: [
                 SizedBox(
@@ -575,7 +575,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text('라운드',
                       style: TextStyle(
                           fontSize: 13,
-                          color: _kSlate,
+                          color: context.cSlate,
                           fontWeight: FontWeight.w500)),
                 ),
                 Expanded(
@@ -583,7 +583,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 13,
-                          color: _kSlate,
+                          color: context.cSlate,
                           fontWeight: FontWeight.w500)),
                 ),
                 SizedBox(
@@ -592,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       textAlign: TextAlign.right,
                       style: TextStyle(
                           fontSize: 13,
-                          color: _kSlate,
+                          color: context.cSlate,
                           fontWeight: FontWeight.w500)),
                 ),
               ],
@@ -615,19 +615,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final Color fg;
     switch (result) {
       case MatchResult.win:
-        bg = const Color(0xFFD9F8E7);
-        fg = const Color(0xFF059669);
+        bg = context.isDark ? const Color(0xFF1F4A38) : const Color(0xFFD9F8E7);
+        fg = context.isDark ? const Color(0xFF4ADE80) : const Color(0xFF059669);
         break;
       case MatchResult.lose:
-        bg = const Color(0xFFFFE0E0);
-        fg = const Color(0xFFDC2626);
+        bg = context.isDark ? const Color(0xFF5A2A2E) : const Color(0xFFFFE0E0);
+        fg = context.isDark ? const Color(0xFFFF7B7B) : const Color(0xFFDC2626);
         break;
       case MatchResult.draw:
-        bg = const Color(0xFFFEF3C7);
-        fg = const Color(0xFFD97706);
+        bg = context.isDark ? const Color(0xFF574516) : const Color(0xFFFEF3C7);
+        fg = context.isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
         break;
       case MatchResult.none:
-        bg = const Color(0xFFF3F4F6);
+        bg = context.isDark ? context.cFill : const Color(0xFFF3F4F6);
         fg = const Color(0xFF9CA3AF);
         break;
     }
@@ -740,12 +740,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 size: 40, color: Color(0xFFEF4444)),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             '아직 기록이 없어요',
             style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A1A)),
+                fontSize: 18, fontWeight: FontWeight.w700, color: context.cInk),
           ),
           const SizedBox(height: 8),
           Text(
@@ -802,7 +800,7 @@ class _HomeScreenState extends State<HomeScreen> {
           cardBuilder: (r) => Container(
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.cSurface,
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
@@ -877,23 +875,23 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const PopScope(
+      builder: (ctx) => PopScope(
         canPop: false,
         child: Center(
           child: Card(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 28, vertical: 22),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(color: Color(0xFFEF4444)),
-                  SizedBox(height: 14),
+                  const CircularProgressIndicator(color: Color(0xFFEF4444)),
+                  const SizedBox(height: 14),
                   Text('이미지 만드는 중...',
                       style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           decoration: TextDecoration.none,
-                          color: Colors.black87)),
+                          color: context.cInk)),
                 ],
               ),
             ),
@@ -963,11 +961,11 @@ class _HomeScreenState extends State<HomeScreen> {
             key: key,
             child: Container(
               width: 420,
-              color: const Color(0xFFF5F5F7),
+              color: context.cExportBg,
               padding: const EdgeInsets.all(16),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.cSurface,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: ClipRRect(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../data/pokemon_data.dart';
 
@@ -74,7 +75,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: context.cSurface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       insetPadding: const EdgeInsets.all(12),
       child: SizedBox(
@@ -87,12 +88,12 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
               padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     '포켓몬 선택',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1A1A1A),
+                      color: context.cInk,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -143,7 +144,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                         )
                       : null,
                   filled: true,
-                  fillColor: const Color(0xFFF5F5F5),
+                  fillColor: context.cFill,
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   border: OutlineInputBorder(
@@ -163,9 +164,9 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F8F8),
+                  color: context.cFill,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E5E5)),
+                  border: Border.all(color: context.cBorder),
                 ),
                 child: Row(
                   children: [
@@ -195,7 +196,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                                 placeholder: (c, u) => Container(
                                     width: 38,
                                     height: 38,
-                                    color: const Color(0xFFEEEEEE)),
+                                    color: context.cBorder),
                                 errorWidget: (c, u, e) => const Icon(
                                     Icons.catching_pokemon,
                                     size: 18,
@@ -230,9 +231,9 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
 
             // ── 세대 탭 바
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Color(0xFFF0F0F0), width: 1),
+                  bottom: BorderSide(color: context.cLine, width: 1),
                 ),
               ),
               child: TabBar(
@@ -338,12 +339,10 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
             decoration: BoxDecoration(
               color: isSelected
                   ? const Color(0xFFEF4444).withValues(alpha: 0.08)
-                  : const Color(0xFFF8F8F8),
+                  : context.cFill,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: isSelected
-                    ? const Color(0xFFEF4444)
-                    : const Color(0xFFE8E8E8),
+                color: isSelected ? const Color(0xFFEF4444) : context.cBorder,
                 width: isSelected ? 1.5 : 1,
               ),
             ),
@@ -400,9 +399,8 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                       fontSize: 10,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w400,
-                      color: isSelected
-                          ? const Color(0xFFEF4444)
-                          : const Color(0xFF555555),
+                      color:
+                          isSelected ? const Color(0xFFEF4444) : context.cSlate,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

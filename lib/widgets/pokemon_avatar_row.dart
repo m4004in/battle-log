@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../data/pokemon_data.dart';
 
@@ -22,7 +23,7 @@ class PokemonAvatarRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (pokemonIds.isEmpty)
-            _buildEmptySlot()
+            _buildEmptySlot(context)
           else
             ...pokemonIds.map((id) {
               final p = allPokemon.firstWhere(
@@ -32,7 +33,7 @@ class PokemonAvatarRow extends StatelessWidget {
               );
               return Padding(
                 padding: const EdgeInsets.only(right: 2),
-                child: _buildAvatar(p),
+                child: _buildAvatar(context, p),
               );
             }),
         ],
@@ -40,14 +41,14 @@ class PokemonAvatarRow extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatar(PokemonInfo p) {
+  Widget _buildAvatar(BuildContext context, PokemonInfo p) {
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: context.cFill,
         shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+        border: Border.all(color: context.cBorder, width: 1),
       ),
       child: ClipOval(
         child: CachedNetworkImage(
@@ -73,15 +74,15 @@ class PokemonAvatarRow extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptySlot() {
+  Widget _buildEmptySlot(BuildContext context) {
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: context.cFill,
         shape: BoxShape.circle,
         border: Border.all(
-          color: const Color(0xFFDDDDDD),
+          color: context.cBorder,
           width: 1,
           style: BorderStyle.solid,
         ),
@@ -115,9 +116,9 @@ class PokemonSelectorRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F8),
+          color: context.cFill,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE5E5E5)),
+          border: Border.all(color: context.cBorder),
         ),
         child: Row(
           children: [
@@ -138,7 +139,7 @@ class PokemonSelectorRow extends StatelessWidget {
                         width: avatarSize,
                         height: avatarSize,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.cSurface,
                           shape: BoxShape.circle,
                           border: Border.all(
                               color: const Color(0xFFEF4444)
@@ -165,8 +166,7 @@ class PokemonSelectorRow extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         p.nameKo,
-                        style: const TextStyle(
-                            fontSize: 9, color: Color(0xFF888888)),
+                        style: TextStyle(fontSize: 9, color: context.cSlate),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -180,10 +180,10 @@ class PokemonSelectorRow extends StatelessWidget {
                     width: avatarSize,
                     height: avatarSize,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.cSurface,
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: const Color(0xFFDDDDDD),
+                          color: context.cBorder,
                           width: 1,
                           style: BorderStyle.solid),
                     ),

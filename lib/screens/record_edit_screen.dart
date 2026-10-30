@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import '../models/tournament_record.dart';
 import '../data/pokemon_data.dart';
@@ -63,11 +64,10 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
       lastDate: DateTime(2030),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFFEF4444),
-            onPrimary: Colors.white,
-            surface: Colors.white,
-          ),
+          colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: const Color(0xFFEF4444),
+                onPrimary: Colors.white,
+              ),
         ),
         child: child!,
       ),
@@ -165,19 +165,18 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.cSurface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios,
-              size: 18, color: Color(0xFF1A1A1A)),
+          icon: Icon(Icons.arrow_back_ios, size: 18, color: context.cInk),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.isNew ? '새 대회 기록' : '기록 수정',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A1A),
+            color: context.cInk,
           ),
         ),
         centerTitle: true,
@@ -196,7 +195,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: const Color(0xFFF0F0F0)),
+          child: Container(height: 1, color: context.cLine),
         ),
       ),
       body: SingleChildScrollView(
@@ -226,9 +225,9 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 13),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.cSurface,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE8E8E8)),
+                        border: Border.all(color: context.cBorder),
                       ),
                       child: Row(
                         children: [
@@ -237,9 +236,9 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                           const SizedBox(width: 10),
                           Text(
                             DateFormat('yyyy년 MM월 dd일').format(_record.date),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF1A1A1A),
+                              color: context.cInk,
                             ),
                           ),
                           const Spacer(),
@@ -301,7 +300,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.cSurface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: const Color(0xFFEF4444).withValues(alpha: 0.3),
@@ -341,7 +340,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cSurface,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -356,9 +355,10 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
           // 라운드 헤더
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFEF2F2),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+            decoration: BoxDecoration(
+              color: context.cTint,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(14)),
             ),
             child: Row(
               children: [
@@ -383,10 +383,10 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                 const SizedBox(width: 8),
                 Text(
                   '${roundIndex + 1}라운드',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
-                    color: Color(0xFF1A1A1A),
+                    color: context.cInk,
                   ),
                 ),
                 const Spacer(),
@@ -418,7 +418,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                     prefixIcon: Icon(Icons.person_outline,
                         size: 16, color: Colors.grey[400]),
                     filled: true,
-                    fillColor: const Color(0xFFF8F8F8),
+                    fillColor: context.cFill,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     border: OutlineInputBorder(
@@ -477,7 +477,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                         width: 24,
                         height: 24,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0F0F0),
+                          color: context.cLine,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Icon(Icons.remove, size: 14),
@@ -497,7 +497,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                         width: 24,
                         height: 24,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0F0F0),
+                          color: context.cLine,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Icon(Icons.add, size: 14),
@@ -610,9 +610,9 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
+            color: context.cFill,
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFFDDDDDD), width: 1.5),
+            border: Border.all(color: context.cBorder, width: 1.5),
           ),
           child: const Center(
             child: Text('−',
@@ -676,7 +676,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-            color: const Color(0xFFF0F0F0),
+            color: context.cLine,
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Text('미정',
@@ -706,7 +706,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cSurface,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -728,10 +728,10 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
         const SizedBox(width: 6),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A1A),
+            color: context.cInk,
           ),
         ),
       ],
@@ -746,13 +746,13 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
   }) {
     return TextField(
       controller: controller,
-      style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
+      style: TextStyle(fontSize: 14, color: context.cInk),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
         prefixIcon: Icon(icon, size: 16, color: Colors.grey[400]),
         filled: true,
-        fillColor: const Color(0xFFF8F8F8),
+        fillColor: context.cFill,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
