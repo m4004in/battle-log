@@ -440,7 +440,7 @@ class HomeScreen extends StatelessWidget {
     final opponents = _pokemonOf(round.opponentPokemonIds);
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 56),
+      constraints: const BoxConstraints(minHeight: 64),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
@@ -464,25 +464,31 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (opponents.isNotEmpty)
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: opponents
                         .take(3)
-                        .map((p) => _buildSprite(p.spriteUrl, size: 44))
+                        .map((p) => _buildSprite(p.spriteUrl, size: 56))
                         .toList(),
                   ),
                 if (round.opponentDeckName.isNotEmpty)
-                  Padding(
-                    padding: EdgeInsets.zero,
-                    child: Text(
-                      round.opponentDeckName,
-                      style: const TextStyle(fontSize: 11, color: _kSlate),
-                      overflow: TextOverflow.ellipsis,
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Text(
+                        round.opponentDeckName,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _kSlate,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
               ],
