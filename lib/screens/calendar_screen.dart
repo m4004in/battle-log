@@ -109,7 +109,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: context.cBg,
       appBar: AppBar(
         backgroundColor: context.cSurface,
         elevation: 0,
@@ -136,7 +136,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         _selected != null &&
                         _sameDay(_selected!, _now)
                     ? context.cFill
-                    : Colors.white,
+                    : context.cSurface,
                 shape: StadiumBorder(side: BorderSide(color: context.cBorder)),
                 child: InkWell(
                   customBorder: const StadiumBorder(),
@@ -163,7 +163,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       body: Column(
         children: [
           Container(
-            color: Colors.white,
+            color: context.cSurface,
             child: Column(
               children: [
                 _buildMonthHeader(month),

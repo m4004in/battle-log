@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final provider = context.watch<TournamentProvider>();
     final records = provider.records;
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: context.cBg,
       appBar: _selecting
           ? _buildSelectAppBar(records)
           : _buildNormalAppBar(records),

@@ -163,7 +163,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: context.cBg,
       appBar: AppBar(
         backgroundColor: context.cSurface,
         elevation: 0,
