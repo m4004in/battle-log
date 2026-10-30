@@ -546,7 +546,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           .take(3)
                           .map((p) => Align(
                                 widthFactor: 0.78,
-                                child: _buildSprite(p.spriteUrl, size: 64),
+                                child: _buildSprite(p.spriteUrl, size: 54),
                               ))
                           .toList(),
                     ),
@@ -640,8 +640,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final opponents = _pokemonOf(round.opponentPokemonIds);
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 72),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      constraints: const BoxConstraints(minHeight: 60),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
         border: Border(
@@ -671,7 +671,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     .take(3)
                     .map((p) => Align(
                           widthFactor: 0.78,
-                          child: _buildSprite(p.spriteUrl, size: 64),
+                          child: _buildSprite(p.spriteUrl, size: 54),
                         ))
                     .toList(),
               ),
