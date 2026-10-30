@@ -377,16 +377,21 @@ class HomeScreen extends StatelessWidget {
                 ),
                 Expanded(
                   child: Text('덱',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 13,
                           color: _kSlate,
                           fontWeight: FontWeight.w500)),
                 ),
-                Text('결과',
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: _kSlate,
-                        fontWeight: FontWeight.w500)),
+                SizedBox(
+                  width: 56,
+                  child: Text('결과',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: _kSlate,
+                          fontWeight: FontWeight.w500)),
+                ),
               ],
             ),
           ),
@@ -464,43 +469,30 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (opponents.isNotEmpty)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: opponents
-                        .take(3)
-                        .map((p) => _buildSprite(p.spriteUrl, size: 56))
-                        .toList(),
-                  ),
-                if (round.opponentDeckName.isNotEmpty)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Text(
-                        round.opponentDeckName,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _kSlate,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-              ],
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: opponents
+                    .take(3)
+                    .map((p) => Align(
+                          widthFactor: 0.78,
+                          child: _buildSprite(p.spriteUrl, size: 56),
+                        ))
+                    .toList(),
+              ),
             ),
           ),
-          Text(
-            letters,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: fg,
-              letterSpacing: 2,
+          SizedBox(
+            width: 56,
+            child: Text(
+              letters,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: fg,
+                letterSpacing: 2,
+              ),
             ),
           ),
         ],
