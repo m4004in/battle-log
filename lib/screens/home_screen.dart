@@ -791,14 +791,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFolderButton(TournamentRecord record) {
-    final folder =
-        context.watch<TournamentProvider>().folderById(record.folderId);
-    final inFolder = folder != null;
-    const red = Color(0xFFEF4444);
+    final inFolder =
+        context.read<TournamentProvider>().folderById(record.folderId) != null;
     return Padding(
       padding: const EdgeInsets.only(top: 1),
       child: Material(
-        color: inFolder ? red.withValues(alpha: 0.12) : context.cFill,
+        color: context.cFill,
         shape: const StadiumBorder(),
         child: InkWell(
           customBorder: const StadiumBorder(),
@@ -808,25 +806,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  inFolder ? Icons.folder_rounded : Icons.folder_outlined,
-                  size: 16,
-                  color: inFolder ? red : context.cSlate,
-                ),
+                Icon(Icons.folder_outlined, size: 16, color: context.cSlate),
                 if (inFolder) ...[
-                  const SizedBox(width: 3),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 70),
-                    child: Text(
-                      folder.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: red),
-                    ),
-                  ),
+                  const SizedBox(width: 2),
+                  const Icon(Icons.check_rounded,
+                      size: 15, color: Color(0xFF16A34A)),
                 ],
               ],
             ),
