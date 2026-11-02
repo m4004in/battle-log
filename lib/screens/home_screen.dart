@@ -465,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
               : null,
           decoration: BoxDecoration(
-            color: context.cSurface,
+            color: context.cCard,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
@@ -484,7 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 decoration: BoxDecoration(
-                  color: context.cTint,
+                  color: context.cCardTint,
                   borderRadius:
                       const BorderRadius.vertical(bottom: Radius.circular(14)),
                 ),
@@ -668,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRoundRow(int idx, RoundRecord round) {
     final result = round.roundResult;
-    final Color bg;
+    Color bg;
     final Color fg;
     switch (result) {
       case MatchResult.win:
@@ -688,6 +688,9 @@ class _HomeScreenState extends State<HomeScreen> {
         fg = const Color(0xFF9CA3AF);
         break;
     }
+
+    // 배경 이미지 테마에서만 초록/빨강/노랑 칸을 살짝 투명하게
+    if (context.isArt) bg = bg.withValues(alpha: 0.62);
 
     final letters = round.games.map((g) {
       switch (g.result) {
@@ -861,7 +864,7 @@ class _HomeScreenState extends State<HomeScreen> {
           cardBuilder: (r) => Container(
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
-              color: context.cSurface,
+              color: context.cCard,
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
@@ -908,7 +911,7 @@ class _HomeScreenState extends State<HomeScreen> {
           cardBuilder: (r) => Container(
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
-              color: context.cSurface,
+              color: context.cCard,
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(

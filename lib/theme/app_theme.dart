@@ -46,7 +46,7 @@ class ThemeController extends ChangeNotifier {
   }
 }
 
-/// 배경 이미지 테마용: 화면 전체 배경 (살짝 투명하게 흰 바탕에 깔림)
+/// 배경 이미지 테마용: 원본 그대로, 비율 유지하며 화면에 맞게 잘라서 채운다.
 /// 가로 화면(데스크탑)에서는 사진을 90도 눕혀서 가로로 보여준다.
 class ArtBackground extends StatelessWidget {
   const ArtBackground({super.key});
@@ -60,17 +60,14 @@ class ArtBackground extends StatelessWidget {
           'assets/bg/bg.png',
           fit: BoxFit.cover,
           alignment: Alignment.center,
-          filterQuality: FilterQuality.medium,
+          filterQuality: FilterQuality.high,
           gaplessPlayback: true,
         );
         return Stack(
           fit: StackFit.expand,
           children: [
             const ColoredBox(color: Color(0xFFFAFAFA)),
-            Opacity(
-              opacity: 0.55,
-              child: landscape ? RotatedBox(quarterTurns: 1, child: img) : img,
-            ),
+            landscape ? RotatedBox(quarterTurns: 1, child: img) : img,
           ],
         );
       },
@@ -163,6 +160,13 @@ ThemeData buildDarkTheme() {
 /// 라이트/다크에 맞는 색 팔레트
 extension AppPalette on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
+  // 배경 이미지 테마 (스캐폴드가 투명한 경우)
+  bool get isArt => Theme.of(this).scaffoldBackgroundColor == Colors.transparent;
+  /// 기록 카드 바탕: 배경 이미지 테마에서만 살짝 투명
+  Color get cCard => isArt ? Colors.white.withValues(alpha: 0.74) : cSurface;
+  /// 기록 카드 하단 힌트 줄 바탕
+  Color get cCardTint =>
+      isArt ? const Color(0xFFFEF2F2).withValues(alpha: 0.6) : cTint;
   Color get cSurface => isDark ? _dSurface : Colors.white;
   Color get cBg => Theme.of(this).scaffoldBackgroundColor;
   Color get cInk => isDark ? _dInk : const Color(0xFF0F172A);
