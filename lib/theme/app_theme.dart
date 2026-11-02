@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// 다크모드 상태 (저장됨)
+/// 화면 테마 3종: 흰색 -> 다크 -> 배경 이미지 순서로 돈다.
+enum AppThemeMode { light, dark, art }
+
 class ThemeController extends ChangeNotifier {
-  static const String _key = 'dark_mode';
-  bool _dark = false;
-  bool get isDark => _dark;
+  static const String _key = 'theme_mode';
+  static const String _legacyKey = 'dark_mode';
+  AppThemeMode _mode = AppThemeMode.light;
+  AppThemeMode get mode => _mode;
+  bool get isDark => _mode == AppThemeMode.dark;
+  bool get isArt => _mode == AppThemeMode.art;
 
   ThemeController() {
     _load();
@@ -15,21 +20,54 @@ class ThemeController extends ChangeNotifier {
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final v = prefs.getBool(_key) ?? false;
-      if (v != _dark) {
-        _dark = v;
+      final saved = prefs.getInt(_key);
+      final AppThemeMode v;
+      if (saved != null && saved >= 0 && saved < AppThemeMode.values.length) {
+        v = AppThemeMode.values[saved];
+      } else {
+        v = (prefs.getBool(_legacyKey) ?? false)
+            ? AppThemeMode.dark
+            : AppThemeMode.light;
+      }
+      if (v != _mode) {
+        _mode = v;
         notifyListeners();
       }
     } catch (_) {}
   }
 
   Future<void> toggle() async {
-    _dark = !_dark;
+    _mode = AppThemeMode.values[(_mode.index + 1) % AppThemeMode.values.length];
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_key, _dark);
+      await prefs.setInt(_key, _mode.index);
     } catch (_) {}
+  }
+}
+
+/// 배경 이미지 테마용: 화면 전체 배경 (살짝 투명하게 흰 바탕에 깔림)
+class ArtBackground extends StatelessWidget {
+  const ArtBackground({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: Color(0xFFFAFAFA)),
+        Opacity(
+          opacity: 0.55,
+          child: Image.asset(
+            'assets/bg/bg.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            filterQuality: FilterQuality.medium,
+            gaplessPlayback: true,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -62,6 +100,10 @@ ThemeData buildLightTheme() => ThemeData(
         ),
       ),
     );
+
+/// 배경 이미지 테마: 라이트 팔레트 + 투명 스캐폴드
+ThemeData buildArtTheme() =>
+    buildLightTheme().copyWith(scaffoldBackgroundColor: Colors.transparent);
 
 ThemeData buildDarkTheme() {
   final scheme = ColorScheme.fromSeed(
@@ -115,7 +157,7 @@ ThemeData buildDarkTheme() {
 extension AppPalette on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
   Color get cSurface => isDark ? _dSurface : Colors.white;
-  Color get cBg => isDark ? _dBg : const Color(0xFFFAFAFA);
+  Color get cBg => Theme.of(this).scaffoldBackgroundColor;
   Color get cInk => isDark ? _dInk : const Color(0xFF0F172A);
   Color get cSlate => isDark ? _dSlate : const Color(0xFF64748B);
   Color get cLine => isDark ? _dLine : const Color(0xFFF0F0F0);
@@ -126,21 +168,37 @@ extension AppPalette on BuildContext {
   Color get cExportBg => isDark ? _dBg : const Color(0xFFF5F5F7);
 }
 
-/// 앱바용 전구 버튼 (눌러서 다크모드 전환)
+/// 앱바용 전구 버튼 (눌러서 흰색 -> 다크 -> 배경 이미지 순환)
 class ThemeBulbButton extends StatelessWidget {
   const ThemeBulbButton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final dark = context.isDark;
+    final mode = context.watch<ThemeController>().mode;
+    late final IconData icon;
+    late final Color color;
+    late final String tip;
+    switch (mode) {
+      case AppThemeMode.light:
+        icon = Icons.lightbulb_rounded;
+        color = const Color(0xFFF59E0B);
+        tip = '다크 모드로';
+        break;
+      case AppThemeMode.dark:
+        icon = Icons.lightbulb_outline_rounded;
+        color = const Color(0xFFA3A8B3);
+        tip = '배경 이미지로';
+        break;
+      case AppThemeMode.art:
+        icon = Icons.auto_awesome_rounded;
+        color = const Color(0xFFEC4899);
+        tip = '흰색 모드로';
+        break;
+    }
     return IconButton(
-      tooltip: dark ? '라이트 모드' : '다크 모드',
+      tooltip: tip,
       onPressed: () => context.read<ThemeController>().toggle(),
-      icon: Icon(
-        dark ? Icons.lightbulb_outline_rounded : Icons.lightbulb_rounded,
-        color: dark ? const Color(0xFFA3A8B3) : const Color(0xFFF59E0B),
-        size: 24,
-      ),
+      icon: Icon(icon, color: color, size: 24),
     );
   }
 }
