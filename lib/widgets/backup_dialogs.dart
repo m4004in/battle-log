@@ -224,7 +224,7 @@ class _RestoreDialogState extends State<_RestoreDialog> {
                 if (_error != null) setState(() => _error = null);
               },
               decoration: InputDecoration(
-                hintText: 'BLOG1.... 으로 시작하는 코드를 붙여넣으세요',
+                hintText: 'BLOG 로 시작하는 백업 코드를 붙여넣으세요',
                 hintStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
                 filled: true,
                 fillColor: context.cFill,
