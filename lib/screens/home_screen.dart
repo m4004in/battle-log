@@ -12,6 +12,8 @@ import '../data/pokemon_data.dart';
 import 'record_edit_screen.dart';
 import 'calendar_screen.dart';
 import 'folder_screen.dart';
+import '../widgets/masonry_list.dart';
+import '../widgets/backup_dialogs.dart';
 import '../widgets/folder_picker_sheet.dart';
 import '../utils/image_saver.dart';
 
@@ -45,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildStatsHeader(records),
               Expanded(
-                child: ListView.builder(
+                child: MasonryList(
                   padding: EdgeInsets.fromLTRB(
                       _selecting ? 8 : 16, 12, 16, _selecting ? 24 : 40),
                   itemCount: records.length,
@@ -190,7 +192,38 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      actions: const [ThemeBulbButton(), SizedBox(width: 4)],
+      actions: [
+        const ThemeBulbButton(),
+        PopupMenuButton<String>(
+          tooltip: '더보기',
+          icon: Icon(Icons.more_vert_rounded, color: context.cInk),
+          color: context.cSurface,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onSelected: (v) {
+            if (v == 'backup') showBackupDialog(context);
+            if (v == 'restore') showRestoreDialog(context);
+          },
+          itemBuilder: (ctx) => [
+            PopupMenuItem(
+              value: 'backup',
+              child: Row(children: [
+                Icon(Icons.upload_rounded, size: 20, color: ctx.cInk),
+                const SizedBox(width: 10),
+                Text('백업 코드 만들기', style: TextStyle(color: ctx.cInk)),
+              ]),
+            ),
+            PopupMenuItem(
+              value: 'restore',
+              child: Row(children: [
+                Icon(Icons.download_rounded, size: 20, color: ctx.cInk),
+                const SizedBox(width: 10),
+                Text('백업 코드로 복원', style: TextStyle(color: ctx.cInk)),
+              ]),
+            ),
+          ],
+        ),
+      ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Container(height: 1, color: context.cLine),

@@ -142,4 +142,51 @@ class TournamentProvider extends ChangeNotifier {
     await _saveRecords();
     notifyListeners();
   }
+
+  // ───────── 백업 / 복원 코드 ─────────
+  static const String _codePrefix = 'BLOG1.';
+
+  /// 모든 기록과 폴더를 하나의 텍스트 코드로 만든다.
+  String exportCode() {
+    final data = {
+      'app': 'battlelog',
+      'v': 1,
+      'records': _records.map((r) => r.toJson()).toList(),
+      'folders': _folders.map((f) => f.toJson()).toList(),
+    };
+    return _codePrefix + base64Url.encode(utf8.encode(jsonEncode(data)));
+  }
+
+  /// 코드로 현재 기록을 통째로 덮어쓴다. 실패하면 오류 메시지를, 성공하면 null을 반환.
+  Future<String?> importCodeOverwrite(String raw) async {
+    final code = raw.replaceAll(RegExp(r'\s+'), '');
+    if (!code.startsWith(_codePrefix)) {
+      return '올바른 백업 코드가 아니에요.';
+    }
+    List<TournamentRecord> newRecords;
+    List<RecordFolder> newFolders;
+    try {
+      final body = code.substring(_codePrefix.length);
+      final text = utf8.decode(base64Url.decode(base64Url.normalize(body)));
+      final data = jsonDecode(text) as Map<String, dynamic>;
+      if (data['app'] != 'battlelog') return '올바른 백업 코드가 아니에요.';
+      newRecords = (data['records'] as List<dynamic>)
+          .map((j) =>
+              TournamentRecord.fromJson(Map<String, dynamic>.from(j as Map)))
+          .toList();
+      newFolders = (data['folders'] as List<dynamic>? ?? [])
+          .map(
+              (j) => RecordFolder.fromJson(Map<String, dynamic>.from(j as Map)))
+          .toList();
+    } catch (_) {
+      return '백업 코드를 읽을 수 없어요. 코드가 일부 잘렸는지 확인해 주세요.';
+    }
+    _records = newRecords;
+    _folders = newFolders;
+    _sortRecords();
+    await _saveRecords();
+    await _saveFolders();
+    notifyListeners();
+    return null;
+  }
 }

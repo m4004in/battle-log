@@ -5,6 +5,7 @@ import '../models/tournament_record.dart';
 import '../providers/tournament_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/folder_picker_sheet.dart';
+import '../widgets/masonry_list.dart';
 
 const Color _kRed = Color(0xFFEF4444);
 
@@ -309,7 +310,7 @@ class FolderDetailScreen extends StatelessWidget {
                 ),
               ),
             )
-          : ListView.builder(
+          : MasonryList(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
               itemCount: items.length,
               itemBuilder: (ctx, i) => GestureDetector(

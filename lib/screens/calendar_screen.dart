@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/tournament_provider.dart';
 import '../models/tournament_record.dart';
+import '../widgets/masonry_list.dart';
 
 /// 월별 캘린더 화면.
 /// - 항상 현재 달로 시작, 좌우 스와이프/화살표로 이전·다음 달 이동
@@ -221,7 +222,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ],
                     ),
                   )
-                : ListView.builder(
+                : MasonryList(
                     padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
                     itemCount: shown.length,
                     itemBuilder: (ctx, i) => GestureDetector(
