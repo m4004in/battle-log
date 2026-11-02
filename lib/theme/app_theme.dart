@@ -47,26 +47,33 @@ class ThemeController extends ChangeNotifier {
 }
 
 /// 배경 이미지 테마용: 화면 전체 배경 (살짝 투명하게 흰 바탕에 깔림)
+/// 가로 화면(데스크탑)에서는 사진을 90도 눕혀서 가로로 보여준다.
 class ArtBackground extends StatelessWidget {
   const ArtBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const ColoredBox(color: Color(0xFFFAFAFA)),
-        Opacity(
-          opacity: 0.55,
-          child: Image.asset(
-            'assets/bg/bg.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-            filterQuality: FilterQuality.medium,
-            gaplessPlayback: true,
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, c) {
+        final landscape = c.maxWidth > c.maxHeight;
+        final img = Image.asset(
+          'assets/bg/bg.png',
+          fit: BoxFit.cover,
+          alignment: Alignment.center,
+          filterQuality: FilterQuality.medium,
+          gaplessPlayback: true,
+        );
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            const ColoredBox(color: Color(0xFFFAFAFA)),
+            Opacity(
+              opacity: 0.55,
+              child: landscape ? RotatedBox(quarterTurns: 1, child: img) : img,
+            ),
+          ],
+        );
+      },
     );
   }
 }
