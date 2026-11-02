@@ -179,8 +179,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                     ),
                     const SizedBox(width: 8),
                     ..._selectedIds.map((id) {
-                      final p = allPokemon.firstWhere((p) => p.id == id,
-                          orElse: () => allPokemon.first);
+                      final p = pokemonById(id) ?? allPokemon.first;
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: Stack(

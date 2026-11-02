@@ -57,18 +57,21 @@ class ArtBackground extends StatelessWidget {
       builder: (context, c) {
         final landscape = c.maxWidth > c.maxHeight;
         final img = Image.asset(
-          'assets/bg/bg.png',
+          'assets/bg/bg.jpg',
+          cacheWidth: 1800,
           fit: BoxFit.cover,
           alignment: Alignment.center,
           filterQuality: FilterQuality.high,
           gaplessPlayback: true,
         );
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            const ColoredBox(color: Color(0xFFFAFAFA)),
-            landscape ? RotatedBox(quarterTurns: 1, child: img) : img,
-          ],
+        return RepaintBoundary(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const ColoredBox(color: Color(0xFFFAFAFA)),
+              landscape ? RotatedBox(quarterTurns: 1, child: img) : img,
+            ],
+          ),
         );
       },
     );

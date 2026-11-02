@@ -76,8 +76,8 @@ class TournamentProvider extends ChangeNotifier {
   Future<void> addRecord(TournamentRecord record) async {
     _records.add(record);
     _sortRecords();
-    await _saveRecords();
     notifyListeners();
+    await _saveRecords();
   }
 
   Future<void> updateRecord(TournamentRecord record) async {
@@ -85,15 +85,15 @@ class TournamentProvider extends ChangeNotifier {
     if (index != -1) {
       _records[index] = record;
       _sortRecords();
-      await _saveRecords();
       notifyListeners();
+      await _saveRecords();
     }
   }
 
   Future<void> deleteRecord(String id) async {
     _records.removeWhere((r) => r.id == id);
-    await _saveRecords();
     notifyListeners();
+    await _saveRecords();
   }
 
   Future<void> _saveFolders() async {
@@ -112,8 +112,8 @@ class TournamentProvider extends ChangeNotifier {
       name: name.trim(),
     );
     _folders.add(folder);
-    await _saveFolders();
     notifyListeners();
+    await _saveFolders();
     return folder;
   }
 
@@ -121,8 +121,8 @@ class TournamentProvider extends ChangeNotifier {
     final f = folderById(id);
     if (f == null) return;
     f.name = name.trim();
-    await _saveFolders();
     notifyListeners();
+    await _saveFolders();
   }
 
   /// 폴더만 삭제 (안에 있던 기록은 지워지지 않고 폴더 없음 상태로 돌아감)
@@ -131,17 +131,17 @@ class TournamentProvider extends ChangeNotifier {
     for (final r in _records) {
       if (r.folderId == id) r.folderId = null;
     }
+    notifyListeners();
     await _saveFolders();
     await _saveRecords();
-    notifyListeners();
   }
 
   Future<void> setRecordFolder(String recordId, String? folderId) async {
     final index = _records.indexWhere((r) => r.id == recordId);
     if (index == -1) return;
     _records[index].folderId = folderId;
-    await _saveRecords();
     notifyListeners();
+    await _saveRecords();
   }
 
   // ───────── 백업 / 복원 코드 ─────────
@@ -164,8 +164,8 @@ class TournamentProvider extends ChangeNotifier {
     }
     _sortRecords();
     await _saveRecords();
-    await _saveFolders();
     notifyListeners();
+    await _saveFolders();
     return null;
   }
 }

@@ -515,18 +515,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // 기록 카드 본문 (타사이트 배틀 로그 스타일)
   // ────────────────────────────────────────────────
 
-  List<PokemonInfo> _pokemonOf(List<int> ids) {
-    return ids
-        .map((id) {
-          try {
-            return allPokemon.firstWhere((p) => p.id == id);
-          } catch (_) {
-            return null;
-          }
-        })
-        .whereType<PokemonInfo>()
-        .toList();
-  }
+  List<PokemonInfo> _pokemonOf(List<int> ids) =>
+      ids.map(pokemonById).whereType<PokemonInfo>().toList();
 
   Widget _buildCardBody(TournamentRecord record, {bool showFolder = false}) {
     final w = record.totalWins;

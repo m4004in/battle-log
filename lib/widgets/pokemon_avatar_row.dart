@@ -26,11 +26,8 @@ class PokemonAvatarRow extends StatelessWidget {
             _buildEmptySlot(context)
           else
             ...pokemonIds.map((id) {
-              final p = allPokemon.firstWhere(
-                (p) => p.id == id,
-                orElse: () =>
-                    const PokemonInfo(id: 1, name: 'bulbasaur', nameKo: '이상해씨'),
-              );
+              final p = pokemonById(id) ??
+                  const PokemonInfo(id: 1, name: 'bulbasaur', nameKo: '이상해씨');
               return Padding(
                 padding: const EdgeInsets.only(right: 2),
                 child: _buildAvatar(context, p),
@@ -126,11 +123,9 @@ class PokemonSelectorRow extends StatelessWidget {
             ...List.generate(3, (i) {
               if (i < selectedIds.length) {
                 final id = selectedIds[i];
-                final p = allPokemon.firstWhere(
-                  (p) => p.id == id,
-                  orElse: () => const PokemonInfo(
-                      id: 1, name: 'bulbasaur', nameKo: '이상해씨'),
-                );
+                final p = pokemonById(id) ??
+                    const PokemonInfo(
+                        id: 1, name: 'bulbasaur', nameKo: '이상해씨');
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: Column(

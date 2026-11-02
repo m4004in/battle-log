@@ -1060,3 +1060,11 @@ const List<PokemonInfo> allPokemon = [
   PokemonInfo(id: 1024, name: 'terapagos-normal', nameKo: '테라파고스'),
   PokemonInfo(id: 1025, name: 'pecharunt', nameKo: '페샤룬트'),
 ];
+
+
+/// id -> 포켓몬 빠른 조회 (목록을 매번 훑지 않도록)
+final Map<int, PokemonInfo> _pokemonIndex = {
+  for (final p in allPokemon) p.id: p,
+};
+
+PokemonInfo? pokemonById(int id) => _pokemonIndex[id];
