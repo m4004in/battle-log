@@ -57,8 +57,7 @@ class ArtBackground extends StatelessWidget {
       builder: (context, c) {
         final landscape = c.maxWidth > c.maxHeight;
         final img = Image.asset(
-          'assets/bg/bg.jpg',
-          cacheWidth: 1800,
+          'assets/bg/bg.png',
           fit: BoxFit.cover,
           alignment: Alignment.center,
           filterQuality: FilterQuality.high,
