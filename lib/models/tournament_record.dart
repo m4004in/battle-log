@@ -66,6 +66,7 @@ class TournamentRecord {
   List<int> myPokemonIds; // 최대 3마리
   List<RoundRecord> rounds;
   DateTime createdAt;
+  String? folderId; // 소속 폴더 (없으면 null)
 
   TournamentRecord({
     required this.id,
@@ -75,6 +76,7 @@ class TournamentRecord {
     List<int>? myPokemonIds,
     List<RoundRecord>? rounds,
     DateTime? createdAt,
+    this.folderId,
   })  : myPokemonIds = myPokemonIds ?? [],
         rounds = rounds ?? [],
         createdAt = createdAt ?? DateTime.now();
@@ -94,6 +96,7 @@ class TournamentRecord {
         'myPokemonIds': myPokemonIds,
         'rounds': rounds.map((r) => r.toJson()).toList(),
         'createdAt': createdAt.toIso8601String(),
+        'folderId': folderId,
       };
 
   factory TournamentRecord.fromJson(Map<String, dynamic> json) =>
@@ -107,6 +110,7 @@ class TournamentRecord {
             .map((r) => RoundRecord.fromJson(r))
             .toList(),
         createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+        folderId: json['folderId'] as String?,
       );
 
   String toJsonString() => jsonEncode(toJson());

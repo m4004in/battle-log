@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import '../models/tournament_record.dart';
@@ -43,6 +44,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
               ))
           .toList(),
       createdAt: widget.record.createdAt,
+      folderId: widget.record.folderId,
     );
     _tournamentNameCtrl.text = _record.tournamentName;
     _myDeckNameCtrl.text = _record.myDeckName;
@@ -152,7 +154,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
   }
 
   void _save() {
-    _record.tournamentName = _tournamentNameCtrl.text;
+    _record.tournamentName = _tournamentNameCtrl.text.trim();
     _record.myDeckName = _myDeckNameCtrl.text;
     for (int i = 0; i < _record.rounds.length; i++) {
       // 덱 이름은 각 라운드 위젯에서 직접 업데이트됨
@@ -214,8 +216,9 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                   _buildInputField(
                     controller: _tournamentNameCtrl,
                     label: '대회명',
-                    hint: '예) 2024 시티 리그',
+                    hint: '예) 2024 시티 리그  (엔터로 2줄 표기)',
                     icon: Icons.location_on_outlined,
+                    multiline: true,
                   ),
                   const SizedBox(height: 10),
                   // 날짜 선택
@@ -743,9 +746,16 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
     required String label,
     required String hint,
     required IconData icon,
+    bool multiline = false,
   }) {
     return TextField(
       controller: controller,
+      keyboardType: multiline ? TextInputType.multiline : TextInputType.text,
+      textInputAction:
+          multiline ? TextInputAction.newline : TextInputAction.done,
+      minLines: 1,
+      maxLines: multiline ? 2 : 1,
+      inputFormatters: multiline ? [_TwoLineFormatter()] : null,
       style: TextStyle(fontSize: 14, color: context.cInk),
       decoration: InputDecoration(
         hintText: hint,
@@ -765,6 +775,17 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
         ),
       ),
     );
+  }
+}
+
+/// 줄바꿈을 최대 1번(= 2줄)까지만 허용
+class _TwoLineFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final count = '\n'.allMatches(newValue.text).length;
+    if (count > 1) return oldValue;
+    return newValue;
   }
 }
 

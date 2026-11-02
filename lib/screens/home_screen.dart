@@ -11,6 +11,8 @@ import '../models/tournament_record.dart';
 import '../data/pokemon_data.dart';
 import 'record_edit_screen.dart';
 import 'calendar_screen.dart';
+import 'folder_screen.dart';
+import '../widgets/folder_picker_sheet.dart';
 import '../utils/image_saver.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -127,55 +129,66 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: context.cSurface,
       elevation: 0,
       titleSpacing: 16,
-      title: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: const BoxDecoration(
-              color: Color(0xFFEF4444),
-              shape: BoxShape.circle,
+      title: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: const BoxDecoration(
+                color: Color(0xFFEF4444),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.catching_pokemon,
+                  size: 16, color: Colors.white),
             ),
-            child: const Icon(Icons.catching_pokemon,
-                size: 16, color: Colors.white),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Battle Log',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: context.cInk,
-              letterSpacing: -0.5,
+            const SizedBox(width: 8),
+            Text(
+              'Battle Log',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: context.cInk,
+                letterSpacing: -0.5,
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          _appBarChip(
-            icon: Icons.add,
-            label: '새 기록',
-            filled: true,
-            onTap: () => _createNewRecord(context),
-          ),
-          const SizedBox(width: 6),
-          _appBarChip(
-            icon: Icons.calendar_month_rounded,
-            label: '월별',
-            filled: false,
-            onTap: () => _openCalendar(context),
-          ),
-          if (records.isNotEmpty) ...[
+            const SizedBox(width: 10),
+            _appBarChip(
+              icon: Icons.add,
+              label: '새 기록',
+              filled: true,
+              onTap: () => _createNewRecord(context),
+            ),
             const SizedBox(width: 6),
             _appBarChip(
-              icon: Icons.download_rounded,
-              label: '저장',
+              icon: Icons.calendar_month_rounded,
+              label: '월별',
               filled: false,
-              onTap: () => setState(() {
-                _selecting = true;
-                _selected.clear();
-              }),
+              onTap: () => _openCalendar(context),
             ),
+            const SizedBox(width: 6),
+            _appBarChip(
+              icon: Icons.folder_rounded,
+              label: '폴더',
+              filled: false,
+              onTap: () => _openFolders(context),
+            ),
+            if (records.isNotEmpty) ...[
+              const SizedBox(width: 6),
+              _appBarChip(
+                icon: Icons.download_rounded,
+                label: '저장',
+                filled: false,
+                onTap: () => setState(() {
+                  _selecting = true;
+                  _selected.clear();
+                }),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
       actions: const [ThemeBulbButton(), SizedBox(width: 4)],
       bottom: PreferredSize(
@@ -432,7 +445,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               // ── 카드 내용 (배틀 로그 스타일)
-              _buildCardBody(record),
+              _buildCardBody(record, showFolder: !_selecting),
               // ── 슬라이드 힌트 표시줄
               Container(
                 width: double.infinity,
@@ -482,7 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
   }
 
-  Widget _buildCardBody(TournamentRecord record) {
+  Widget _buildCardBody(TournamentRecord record, {bool showFolder = false}) {
     final w = record.totalWins;
     final l = record.totalLoses;
     final d = record.totalDraws;
@@ -504,17 +517,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      record.tournamentName.isEmpty
-                          ? '대회명 없음'
-                          : record.tournamentName,
-                      style: TextStyle(
-                        fontSize: 21,
-                        height: 1.2,
-                        fontWeight: FontWeight.w800,
-                        color: context.cInk,
-                        letterSpacing: -0.5,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            record.tournamentName.isEmpty
+                                ? '대회명 없음'
+                                : record.tournamentName,
+                            style: TextStyle(
+                              fontSize: 21,
+                              height: 1.2,
+                              fontWeight: FontWeight.w800,
+                              color: context.cInk,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ),
+                        if (showFolder) ...[
+                          const SizedBox(width: 8),
+                          _buildFolderButton(record),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -766,6 +790,79 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildFolderButton(TournamentRecord record) {
+    final folder =
+        context.watch<TournamentProvider>().folderById(record.folderId);
+    final inFolder = folder != null;
+    const red = Color(0xFFEF4444);
+    return Padding(
+      padding: const EdgeInsets.only(top: 1),
+      child: Material(
+        color: inFolder ? red.withValues(alpha: 0.12) : context.cFill,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: () => showFolderPickerSheet(context, record),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  inFolder ? Icons.folder_rounded : Icons.folder_outlined,
+                  size: 16,
+                  color: inFolder ? red : context.cSlate,
+                ),
+                if (inFolder) ...[
+                  const SizedBox(width: 3),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 70),
+                    child: Text(
+                      folder.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: red),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openFolders(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => FolderListScreen(
+          cardBuilder: (r) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: context.cSurface,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: _buildCardBody(r, showFolder: true),
+          ),
+          onEdit: (c, r) => _editRecord(c, r, c.read<TournamentProvider>()),
+        ),
+      ),
+    );
+  }
+
   // ────────────────────────────────────────────────
   // 네비게이션
   // ────────────────────────────────────────────────
@@ -805,7 +902,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             clipBehavior: Clip.antiAlias,
-            child: _buildCardBody(r),
+            child: _buildCardBody(r, showFolder: true),
           ),
           onEdit: (c, r) => _editRecord(c, r, c.read<TournamentProvider>()),
         ),
