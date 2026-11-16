@@ -1,12 +1,12 @@
 {
-    "name": "battle_log",
-    "short_name": "battle_log",
+    "name": "Battle Log - 포켓몬 대회 기록",
+    "short_name": "Battle Log",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#FFFFFF",
+    "theme_color": "#EF4444",
+    "description": "포켓몬 카드게임 대회 승패 기록 앱",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {
