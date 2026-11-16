@@ -1,0 +1,14 @@
+Korean Pokemon name verification
+================================
+Updated file: lib/data/pokemon_data.dart
+Scope: National Pokedex #1-1025 (all 9 generations)
+Entries verified: 1025
+Names changed: 529
+Verification: IDs are continuous from 1 through 1025; no missing or duplicate IDs;
+all nameKo fields match the reference list by National Pokedex ID.
+
+Reference data: PokeAPI pokemon_species_names.csv, Korean locale (local_language_id=3),
+cross-checked against DexVoyage Korean species-name index (which identifies PokéAPI
+as its source). These are localized Korean species names, not machine translations.
+PokeAPI: https://github.com/PokeAPI/pokeapi/blob/master/data/v2/csv/pokemon_species_names.csv
+DexVoyage: https://dexvoyage.com/names/ko/
