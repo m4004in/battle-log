@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 포켓몬 이미지를 인터넷에서 받아오기 위해 필요 -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Battle Log"
         android:name="${applicationName}"
