@@ -183,7 +183,10 @@ extension AppPalette on BuildContext {
 
 /// 앱바용 전구 버튼 (눌러서 흰색 -> 다크 -> 배경 이미지 순환)
 class ThemeBulbButton extends StatelessWidget {
-  const ThemeBulbButton({super.key});
+  /// 좁은 화면에서는 주변 여백을 줄여 버튼 자리를 더 확보한다.
+  final bool dense;
+
+  const ThemeBulbButton({super.key, this.dense = false});
 
   @override
   Widget build(BuildContext context) {
@@ -210,6 +213,11 @@ class ThemeBulbButton extends StatelessWidget {
     }
     return IconButton(
       tooltip: tip,
+      padding: dense ? const EdgeInsets.symmetric(horizontal: 4) : null,
+      constraints: dense
+          ? const BoxConstraints(minWidth: 34, minHeight: 34)
+          : null,
+      visualDensity: dense ? VisualDensity.compact : null,
       onPressed: () => context.read<ThemeController>().toggle(),
       icon: Icon(icon, color: color, size: 24),
     );

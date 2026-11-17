@@ -132,78 +132,90 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: context.cSurface,
       elevation: 0,
       titleSpacing: 16,
-      title: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: const BoxDecoration(
-                color: Color(0xFFEF4444),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.catching_pokemon,
-                  size: 16, color: Colors.white),
+      // 좁은 화면에서는 브랜드 텍스트를 숨겨 5개 버튼 자리를 확보한다.
+      title: LayoutBuilder(
+        builder: (ctx, box) {
+          final showBrand = box.maxWidth > 395;
+          final showLogo = box.maxWidth > 330;
+          return FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                if (showLogo)
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEF4444),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.catching_pokemon,
+                        size: 15, color: Colors.white),
+                  ),
+                if (showBrand) ...[
+                  const SizedBox(width: 7),
+                  Text(
+                    'Battle Log',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: context.cInk,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+                if (showLogo) const SizedBox(width: 8),
+                _appBarChip(
+                  icon: Icons.add,
+                  label: '새 기록',
+                  filled: true,
+                  onTap: () => _createNewRecord(context),
+                ),
+                const SizedBox(width: 4),
+                _appBarChip(
+                  icon: Icons.calendar_month_rounded,
+                  label: '월별',
+                  filled: false,
+                  onTap: () => _openCalendar(context),
+                ),
+                const SizedBox(width: 4),
+                _appBarChip(
+                  icon: Icons.folder_rounded,
+                  label: '폴더',
+                  filled: false,
+                  onTap: () => _openFolders(context),
+                ),
+                const SizedBox(width: 4),
+                _appBarChip(
+                  icon: Icons.insights_rounded,
+                  label: '승률',
+                  filled: false,
+                  onTap: () => _openWinRate(context, records),
+                ),
+                if (records.isNotEmpty) ...[
+                  const SizedBox(width: 4),
+                  _appBarChip(
+                    icon: Icons.download_rounded,
+                    label: '저장',
+                    filled: false,
+                    onTap: () => setState(() {
+                      _selecting = true;
+                      _selected.clear();
+                    }),
+                  ),
+                ],
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              'Battle Log',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: context.cInk,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(width: 10),
-            _appBarChip(
-              icon: Icons.add,
-              label: '새 기록',
-              filled: true,
-              onTap: () => _createNewRecord(context),
-            ),
-            const SizedBox(width: 6),
-            _appBarChip(
-              icon: Icons.calendar_month_rounded,
-              label: '월별',
-              filled: false,
-              onTap: () => _openCalendar(context),
-            ),
-            const SizedBox(width: 6),
-            _appBarChip(
-              icon: Icons.folder_rounded,
-              label: '폴더',
-              filled: false,
-              onTap: () => _openFolders(context),
-            ),
-            const SizedBox(width: 6),
-            _appBarChip(
-              icon: Icons.insights_rounded,
-              label: '승률',
-              filled: false,
-              onTap: () => _openWinRate(context, records),
-            ),
-            if (records.isNotEmpty) ...[
-              const SizedBox(width: 6),
-              _appBarChip(
-                icon: Icons.download_rounded,
-                label: '저장',
-                filled: false,
-                onTap: () => setState(() {
-                  _selecting = true;
-                  _selected.clear();
-                }),
-              ),
-            ],
-          ],
-        ),
+          );
+        },
       ),
       actions: [
-        const ThemeBulbButton(),
+        const ThemeBulbButton(dense: true),
         PopupMenuButton<String>(
           tooltip: '더보기',
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          iconSize: 22,
           icon: Icon(Icons.more_vert_rounded, color: context.cInk),
           color: context.cSurface,
           shape:
@@ -255,16 +267,16 @@ class _HomeScreenState extends State<HomeScreen> {
         customBorder: const StadiumBorder(),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 15, color: filled ? Colors.white : context.cInk),
-              const SizedBox(width: 3),
+              Icon(icon, size: 16.5, color: filled ? Colors.white : context.cInk),
+              const SizedBox(width: 3.5),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w700,
                   color: filled ? Colors.white : context.cInk,
                 ),
