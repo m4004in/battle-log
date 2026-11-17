@@ -15,6 +15,7 @@ const List<Map<String, dynamic>> _generations = [
   {'label': '7세대', 'start': 722, 'end': 809},
   {'label': '8세대', 'start': 810, 'end': 905},
   {'label': '9세대', 'start': 906, 'end': 1025},
+  {'label': '메가진화', 'kind': 'mega'},
 ];
 
 class PokemonPickerDialog extends StatefulWidget {
@@ -41,11 +42,23 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
   // 탭 인덱스에 따라 필터링된 포켓몬 목록
   List<PokemonInfo> _getFiltered(int tabIndex) {
     final gen = _generations[tabIndex];
-    final start = gen['start'] as int;
-    final end = gen['end'] as int;
+    final isMegaTab = gen['kind'] == 'mega';
+    final start = (gen['start'] as int?) ?? 0;
+    final end = (gen['end'] as int?) ?? 0;
 
-    List<PokemonInfo> base =
-        allPokemon.where((p) => p.id >= start && p.id <= end).toList();
+    List<PokemonInfo> base;
+    if (isMegaTab) {
+      base = List<PokemonInfo>.from(megaPokemon);
+    } else {
+      base = allPokemon.where((p) => p.id >= start && p.id <= end).toList();
+      // 오거폰의 세 가지 가면 폼은 9세대 오거폰 바로 다음에 배치한다.
+      if (gen['label'] == '9세대' || gen['label'] == '전체') {
+        final ogerponIndex = base.indexWhere((p) => p.id == 1017);
+        if (ogerponIndex >= 0) {
+          base.insertAll(ogerponIndex + 1, ogerponForms);
+        }
+      }
+    }
 
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
@@ -407,7 +420,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                   ),
                 ),
                 Text(
-                  '#${p.id.toString().padLeft(4, '0')}',
+                  p.displayNumber ?? '#${p.id.toString().padLeft(4, '0')}',
                   style: const TextStyle(fontSize: 9, color: Colors.grey),
                 ),
               ],

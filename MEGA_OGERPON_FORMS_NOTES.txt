@@ -1,0 +1,14 @@
+메가진화 및 오거폰 폼 추가
+============================
+- 포켓몬 선택창에 별도 '메가진화' 탭 추가
+- 기존 1~9세대 기본 도감은 그대로 유지
+- 9세대 오거폰 바로 뒤에 우물의가면/화덕의가면/주춧돌의가면 폼 추가
+- 메가진화 97개 폼 추가: 기존 메가진화와 Pokémon Legends: Z-A/Mega Dimension 폼 포함
+- 메가진화는 PokeAPI Pokemon IDs를 통해 기존과 같은 픽셀 스프라이트 스타일로 표시
+- 오거폰 가면 폼도 동일한 PokeAPI 스프라이트 경로/스타일 사용
+- 기존 기본 포켓몬 이미지 주소와 전국도감 ID는 변경하지 않음
+- 변형 폼은 내부 고유 ID를 사용하되 원본 PokeAPI 이미지 ID를 별도 보관
+
+참고:
+PokeAPI Pokemon forms CSV: https://github.com/PokeAPI/pokeapi/blob/master/data/v2/csv/pokemon_forms.csv
+PokeAPI sprites: https://github.com/PokeAPI/sprites
