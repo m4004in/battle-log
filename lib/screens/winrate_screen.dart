@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../data/pokemon_data.dart';
 import '../models/tournament_record.dart';
 import '../theme/app_theme.dart';
-import '../widgets/rotating_scroll.dart';
 
 /// 덱 한 개의 전적
 class DeckStat {
@@ -454,12 +453,9 @@ class _WinRateScreenState extends State<WinRateScreen> {
       );
     }
 
-    // Rotating Gallery 모션: 스크롤하면 상대 덱 카드가 Y축으로 돌아간다
-    return RotatingScroll(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
       itemCount: opponents.length + 1,
-      spin: 9,
-      twist: 3,
       itemBuilder: (ctx, i) {
         if (i == 0) {
           return Padding(

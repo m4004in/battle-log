@@ -14,7 +14,6 @@ import 'calendar_screen.dart';
 import 'folder_screen.dart';
 import 'winrate_screen.dart';
 import '../widgets/masonry_list.dart';
-import '../widgets/rotating_scroll.dart';
 import '../widgets/backup_dialogs.dart';
 import '../widgets/folder_picker_sheet.dart';
 import '../utils/image_saver.dart';
@@ -49,15 +48,16 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildStatsHeader(records),
               Expanded(
-                child: _selecting
-                    ? MasonryList(
-                        padding: const EdgeInsets.fromLTRB(8, 12, 16, 24),
-                        itemCount: records.length,
-                        itemBuilder: (ctx, i) {
-                          final r = records[i];
-                          final card = _buildRecordCard(context, r, provider);
-                          final on = _selected.contains(r.id);
-                          return Row(
+                child: MasonryList(
+                  padding: EdgeInsets.fromLTRB(
+                      _selecting ? 8 : 16, 12, 16, _selecting ? 24 : 40),
+                  itemCount: records.length,
+                  itemBuilder: (ctx, i) {
+                    final r = records[i];
+                    final card = _buildRecordCard(context, r, provider);
+                    if (!_selecting) return card;
+                    final on = _selected.contains(r.id);
+                    return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         GestureDetector(
@@ -79,17 +79,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(child: card),
                       ],
                     );
-                        },
-                      )
-                    // Rotating Gallery 모션: 스크롤하면 카드가 Y축으로 돌아간다
-                    : RotatingScroll(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        itemCount: records.length,
-                        spin: 9,
-                        twist: 3,
-                        itemBuilder: (ctx, i) =>
-                            _buildRecordCard(ctx, records[i], provider),
-                      ),
+                  },
+                ),
               ),
             ],
           );
