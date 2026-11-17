@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../models/tournament_record.dart';
 
@@ -90,13 +89,14 @@ class _CoverflowLogsState extends State<CoverflowLogs> {
       itemCount: records.length,
       itemBuilder: (ctx, i) {
         final record = records[i];
-        final rel = (i - _page).clamp(-2.5, 2.5);
+        final rel = (i - _page).clamp(-2.2, 2.2);
         final abs = rel.abs();
-        final scale = (1 - abs * 0.11).clamp(0.70, 1.0);
+        final scale = (1 - abs * 0.16).clamp(0.62, 1.0);
         final matrix = Matrix4.identity()
-          ..setEntry(3, 2, 0.0016)
-          ..rotateY(-rel * 0.30)
-          ..translateByDouble(0.0, 0.0, -abs * 70.0, 1.0)
+          ..setEntry(3, 2, 0.0026)
+          ..rotateY(-rel * 0.52)
+          ..rotateZ(rel * 0.026)
+          ..translateByDouble(rel * -16.0, 0.0, -abs * 130.0, 1.0)
           ..scaleByDouble(scale, scale, 1.0, 1.0);
 
         return GestureDetector(
@@ -126,7 +126,7 @@ class _CoverflowLogsState extends State<CoverflowLogs> {
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               color: Colors.black
-                                  .withValues(alpha: (abs * 0.26).clamp(0.0, 0.5)),
+                                  .withValues(alpha: (abs * 0.42).clamp(0.0, 0.66)),
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
@@ -144,17 +144,13 @@ class _CoverflowLogsState extends State<CoverflowLogs> {
   }
 
   Widget _caption(TournamentRecord record, double opacity) {
-    final w = record.totalWins;
-    final l = record.totalLoses;
-    final d = record.totalDraws;
-    final recordText = d > 0 ? '$w-$l-$d' : '$w-$l';
-
     return Align(
       alignment: Alignment.bottomCenter,
       child: Opacity(
         opacity: opacity,
         child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 30, 14, 12),
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 44, 16, 16),
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.vertical(
               bottom: Radius.circular(14),
@@ -164,58 +160,27 @@ class _CoverflowLogsState extends State<CoverflowLogs> {
               end: Alignment.bottomCenter,
               colors: [
                 Colors.black.withValues(alpha: 0.0),
-                Colors.black.withValues(alpha: 0.55),
-                Colors.black.withValues(alpha: 0.82),
+                Colors.black.withValues(alpha: 0.60),
+                Colors.black.withValues(alpha: 0.88),
               ],
               stops: const [0.0, 0.45, 1.0],
             ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Text(
-                  record.tournamentName.isEmpty ? '대회명 없음' : record.tournamentName,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    height: 1.2,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                    shadows: [
-                      Shadow(color: Colors.black54, blurRadius: 8),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    recordText,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      height: 1.1,
-                      fontWeight: FontWeight.w800,
-                      shadows: [Shadow(color: Colors.black54, blurRadius: 8)],
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    DateFormat('yyyy.MM.dd').format(record.date),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.86),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          child: Text(
+            record.tournamentName.isEmpty ? '대회명 없음' : record.tournamentName,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.left,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 19,
+              height: 1.25,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
+              shadows: [
+                Shadow(color: Colors.black87, blurRadius: 12, offset: Offset(0, 1)),
+              ],
+            ),
           ),
         ),
       ),
