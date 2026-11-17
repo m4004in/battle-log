@@ -14,7 +14,6 @@ import 'calendar_screen.dart';
 import 'folder_screen.dart';
 import 'winrate_screen.dart';
 import '../widgets/masonry_list.dart';
-import '../widgets/coverflow_logs.dart';
 import '../widgets/backup_dialogs.dart';
 import '../widgets/folder_picker_sheet.dart';
 import '../utils/image_saver.dart';
@@ -49,15 +48,16 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildStatsHeader(records),
               Expanded(
-                child: _selecting
-                    ? MasonryList(
-                        padding: const EdgeInsets.fromLTRB(8, 12, 16, 24),
-                        itemCount: records.length,
-                        itemBuilder: (ctx, i) {
-                          final r = records[i];
-                          final card = _buildRecordCard(context, r, provider);
-                          final on = _selected.contains(r.id);
-                          return Row(
+                child: MasonryList(
+                  padding: EdgeInsets.fromLTRB(
+                      _selecting ? 8 : 16, 12, 16, _selecting ? 24 : 40),
+                  itemCount: records.length,
+                  itemBuilder: (ctx, i) {
+                    final r = records[i];
+                    final card = _buildRecordCard(context, r, provider);
+                    if (!_selecting) return card;
+                    final on = _selected.contains(r.id);
+                    return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         GestureDetector(
@@ -79,24 +79,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(child: card),
                       ],
                     );
-                        },
-                      )
-                    : CoverflowLogs(
-                        records: records,
-                        cardBuilder: (ctx, r) => IgnorePointer(
-                          ignoring: false,
-                          child: _buildRecordCard(ctx, r, provider,
-                              coverflow: true),
-                        ),
-                        onOpen: (record, rect, card) => showExpandedLog(
-                          context,
-                          card: card,
-                          from: rect,
-                          onEdit: (rc) =>
-                              _editRecord(rc, record, provider),
-                          onDelete: (rc) => _deleteFromOverlay(rc, record),
-                        ),
-                      ),
+                  },
+                ),
               ),
             ],
           );
@@ -411,56 +395,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // 기록 카드 (Dismissible로 좌→삭제)
   // ────────────────────────────────────────────────
   Widget _buildRecordCard(BuildContext context, TournamentRecord record,
-      TournamentProvider provider, {bool coverflow = false}) {
-    // 커버플로우에서는 카드 자체를 위아래로 스크롤하고 탭으로 확대하므로
-    // 좌우 스와이프는 PageView가 가져가도록 Dismissible을 쓰지 않는다.
-    if (coverflow) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: context.cCard,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.10),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            _buildCardBody(record, showFolder: true),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(
-                color: context.cCardTint,
-                borderRadius:
-                    const BorderRadius.vertical(bottom: Radius.circular(14)),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Icon(Icons.open_in_full_rounded,
-                      size: 13, color: Color(0xFFEF4444)),
-                  SizedBox(width: 4),
-                  Text(
-                    '탭해서 크게 보기',
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFFEF4444),
-                        fontWeight: FontWeight.w500),
-                  ),
-                  SizedBox(width: 12),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+      TournamentProvider provider) {
     return Dismissible(
       key: ValueKey(record.id),
       direction:
@@ -1012,56 +947,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _deleteFromOverlay(
-      BuildContext routeContext, TournamentRecord record) async {
-    final ok = await showDialog<bool>(
-      context: routeContext,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('기록 삭제',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-        content: Text(
-          '"${record.tournamentName.isEmpty ? '대회명 없음' : record.tournamentName}" 기록을 삭제할까요?\n삭제 후 복구할 수 없습니다.',
-          style: const TextStyle(fontSize: 14, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('취소', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('삭제',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
-    if (ok == true && mounted) {
-      await context.read<TournamentProvider>().deleteRecord(record.id);
-      if (routeContext.mounted) Navigator.of(routeContext).pop();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '"${record.tournamentName.isEmpty ? '대회' : record.tournamentName}" 기록이 삭제되었습니다.'),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _editRecord(BuildContext context, TournamentRecord record,

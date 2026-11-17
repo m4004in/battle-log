@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../data/pokemon_data.dart';
 import '../models/tournament_record.dart';
 import '../theme/app_theme.dart';
-import '../widgets/wheel_list.dart';
 
 /// 덱 한 개의 전적
 class DeckStat {
@@ -454,11 +453,9 @@ class _WinRateScreenState extends State<WinRateScreen> {
       );
     }
 
-    // 물레방아(세로 3D) 스크롤
-    return WheelList(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
       itemCount: opponents.length + 1,
-      strength: 1.0,
       itemBuilder: (ctx, i) {
         if (i == 0) {
           return Padding(
