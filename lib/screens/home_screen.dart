@@ -12,6 +12,7 @@ import '../data/pokemon_data.dart';
 import 'record_edit_screen.dart';
 import 'calendar_screen.dart';
 import 'folder_screen.dart';
+import 'winrate_screen.dart';
 import '../widgets/masonry_list.dart';
 import '../widgets/backup_dialogs.dart';
 import '../widgets/folder_picker_sheet.dart';
@@ -176,6 +177,13 @@ class _HomeScreenState extends State<HomeScreen> {
               label: '폴더',
               filled: false,
               onTap: () => _openFolders(context),
+            ),
+            const SizedBox(width: 6),
+            _appBarChip(
+              icon: Icons.insights_rounded,
+              label: '승률',
+              filled: false,
+              onTap: () => _openWinRate(context, records),
             ),
             if (records.isNotEmpty) ...[
               const SizedBox(width: 6),
@@ -842,6 +850,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _openWinRate(BuildContext context, List<TournamentRecord> records) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => WinRateScreen(records: records),
       ),
     );
   }
