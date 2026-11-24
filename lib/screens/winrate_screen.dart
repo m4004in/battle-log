@@ -23,6 +23,84 @@ class DeckStat {
   double get winRate => total == 0 ? 0 : wins / total * 100;
 }
 
+/// 기본 정렬: 많이 만난 덱 → 승률 높은 덱
+int compareDeckStat(DeckStat a, DeckStat b) {
+  final c = b.total.compareTo(a.total);
+  if (c != 0) return c;
+  return b.winRate.compareTo(a.winRate);
+}
+
+/// 스프라이트가 1개 이상 겹치는 덱끼리 서로 옆에 붙도록 이어서 정렬한다.
+/// (같은 덱인데 카드 몇 장만 다른 덱들을 모아 보기 편하게)
+/// - 입력은 이미 [compareDeckStat] 순으로 정렬되어 있다고 본다.
+/// - 겹치는 덱들끼리 한 그룹(연결 요소)으로 묶은 뒤,
+///   그룹 순서는 그룹에서 가장 앞선(= 가장 많이 만난) 덱 순서를 따르고,
+///   그룹 내부는 앞 덱과 겹치는 개수가 가장 많은 덱을 계속 이어 붙인다.
+List<DeckStat> clusterBySpriteOverlap(List<DeckStat> sorted) {
+  final n = sorted.length;
+  if (n <= 1) return sorted;
+
+  final sets = [for (final d in sorted) d.pokemonIds.toSet()];
+
+  // union-find
+  final parent = List<int>.generate(n, (i) => i);
+  int find(int x) {
+    var r = x;
+    while (parent[r] != r) {
+      r = parent[r];
+    }
+    var c = x;
+    while (parent[c] != c) {
+      final next = parent[c];
+      parent[c] = r;
+      c = next;
+    }
+    return r;
+  }
+
+  for (var i = 0; i < n; i++) {
+    if (sets[i].isEmpty) continue;
+    for (var j = i + 1; j < n; j++) {
+      if (sets[j].isEmpty) continue;
+      if (sets[i].intersection(sets[j]).isEmpty) continue;
+      final ri = find(i);
+      final rj = find(j);
+      if (ri != rj) parent[rj] = ri;
+    }
+  }
+
+  final groups = <int, List<int>>{};
+  for (var i = 0; i < n; i++) {
+    groups.putIfAbsent(find(i), () => <int>[]).add(i);
+  }
+
+  final roots = groups.keys.toList()
+    ..sort((a, b) => groups[a]!.first.compareTo(groups[b]!.first));
+
+  final out = <DeckStat>[];
+  for (final root in roots) {
+    final remaining = List<int>.from(groups[root]!);
+    var last = remaining.removeAt(0);
+    out.add(sorted[last]);
+    var lastSet = sets[last];
+    while (remaining.isNotEmpty) {
+      var bestPos = 0;
+      var bestOverlap = -1;
+      for (var k = 0; k < remaining.length; k++) {
+        final ov = lastSet.intersection(sets[remaining[k]]).length;
+        if (ov > bestOverlap) {
+          bestOverlap = ov;
+          bestPos = k;
+        }
+      }
+      last = remaining.removeAt(bestPos);
+      lastSet = sets[last];
+      out.add(sorted[last]);
+    }
+  }
+  return out;
+}
+
 /// 내 덱 하나 + 그 덱이 만난 상대 덱들
 class MyDeckStat extends DeckStat {
   final Map<String, DeckStat> opponents = {};
@@ -34,13 +112,8 @@ class MyDeckStat extends DeckStat {
   });
 
   List<DeckStat> get opponentList {
-    final list = opponents.values.toList()
-      ..sort((a, b) {
-        final c = b.total.compareTo(a.total);
-        if (c != 0) return c;
-        return b.winRate.compareTo(a.winRate);
-      });
-    return list;
+    final list = opponents.values.toList()..sort(compareDeckStat);
+    return clusterBySpriteOverlap(list);
   }
 }
 
@@ -157,13 +230,8 @@ class WinRateReport {
   }
 
   List<DeckStat> get allOpponentList {
-    final list = allOpponents.values.toList()
-      ..sort((a, b) {
-        final c = b.total.compareTo(a.total);
-        if (c != 0) return c;
-        return b.winRate.compareTo(a.winRate);
-      });
-    return list;
+    final list = allOpponents.values.toList()..sort(compareDeckStat);
+    return clusterBySpriteOverlap(list);
   }
 }
 
@@ -407,7 +475,7 @@ class _WinRateScreenState extends State<WinRateScreen> {
     );
   }
 
-  // ── 상대 덱: 한 줄에 3개
+  // ── 상대 덱: 한 줄에 4개 (겹치는 스프라이트 덱끼리 이웃 배치)
   Widget _buildOpponentGrid(BuildContext context) {
     final opponents = _selected < 0
         ? _report.allOpponentList
@@ -422,17 +490,35 @@ class _WinRateScreenState extends State<WinRateScreen> {
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-      physics: const BouncingScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        childAspectRatio: 0.76,
-      ),
-      itemCount: opponents.length,
-      itemBuilder: (ctx, i) => _buildOpponentCard(context, opponents[i]),
+    const columns = 4;
+    const gap = 8.0;
+    const maxContentWidth = 720.0;
+    const minCardHeight = 128.0;
+    const maxCardHeight = 154.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final sidePad = ((width - maxContentWidth) / 2).clamp(12.0, 999.0);
+        final cardWidth =
+            (width - sidePad * 2 - gap * (columns - 1)) / columns;
+        final cardHeight =
+            (cardWidth / 0.63).clamp(minCardHeight, maxCardHeight);
+        final aspect = cardWidth / cardHeight;
+
+        return GridView.builder(
+          padding: EdgeInsets.fromLTRB(sidePad, 10, sidePad, 24),
+          physics: const BouncingScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisSpacing: gap,
+            crossAxisSpacing: gap,
+            childAspectRatio: aspect,
+          ),
+          itemCount: opponents.length,
+          itemBuilder: (ctx, i) => _buildOpponentCard(context, opponents[i]),
+        );
+      },
     );
   }
 
@@ -441,7 +527,7 @@ class _WinRateScreenState extends State<WinRateScreen> {
     final title = opponentTitle(opp.pokemonIds);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 12, 8, 9),
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
       decoration: BoxDecoration(
         color: context.cCard,
         borderRadius: BorderRadius.circular(12),
@@ -461,10 +547,10 @@ class _WinRateScreenState extends State<WinRateScreen> {
           if (opp.pokemonIds.isNotEmpty)
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: SpriteCluster(ids: opp.pokemonIds, size: 32, spacing: -10),
+              child: SpriteCluster(ids: opp.pokemonIds, size: 38, spacing: -18),
             )
           else
-            Icon(Icons.help_outline_rounded, size: 26, color: context.cSlate),
+            Icon(Icons.help_outline_rounded, size: 28, color: context.cSlate),
           const Spacer(),
           Text(
             title,
@@ -472,36 +558,36 @@ class _WinRateScreenState extends State<WinRateScreen> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 10.5,
-              height: 1.25,
+              fontSize: 10,
+              height: 1.2,
               fontWeight: FontWeight.w600,
               color: context.cSlate,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             '${opp.winRate.toStringAsFixed(0)}%',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 17.5,
               height: 1.05,
               fontWeight: FontWeight.w800,
               color: color,
               letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             opp.draws > 0
                 ? '${opp.wins}-${opp.loses}-${opp.draws}'
                 : '${opp.wins}-${opp.loses}',
             style: TextStyle(
-              fontSize: 10.5,
+              fontSize: 10,
               height: 1.1,
               fontWeight: FontWeight.w600,
               color: context.cSlate,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 5),
           ClipRRect(
             borderRadius: BorderRadius.circular(2),
             child: Stack(
