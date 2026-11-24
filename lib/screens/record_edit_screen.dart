@@ -27,6 +27,9 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
   final _myDeckNameCtrl = TextEditingController();
   final _scrollController = ScrollController();
 
+  /// 접힌 라운드들 (라운드 인스턴스를 그대로 키로 사용)
+  final Set<RoundRecord> _collapsedRounds = Set<RoundRecord>.identity();
+
   @override
   void initState() {
     super.initState();
@@ -116,9 +119,65 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
     });
   }
 
-  void _removeRound(int index) {
+  /// 라운드 삭제 — 실수로 지우지 않도록 확인을 받는다.
+  Future<void> _removeRound(int index) async {
     if (_record.rounds.length <= 1) return;
-    setState(() => _record.rounds.removeAt(index));
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.cSurface,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text(
+          '기록을 삭제하겠습니까?',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: context.cInk,
+          ),
+        ),
+        content: Text(
+          '${index + 1}라운드 기록이 삭제됩니다.',
+          style: TextStyle(fontSize: 13.5, color: context.cSlate),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              '아니오',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: context.cSlate,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              '예',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFEF4444),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted && index < _record.rounds.length) {
+      setState(() => _record.rounds.removeAt(index));
+    }
+  }
+
+  /// 라운드 접기/펴기 (라운드 객체 자체를 키로 써서 삭제해도 어긋나지 않게)
+  void _toggleRoundCollapsed(RoundRecord round) {
+    setState(() {
+      if (!_collapsedRounds.remove(round)) {
+        _collapsedRounds.add(round);
+      }
+    });
   }
 
   void _toggleGameResult(int roundIndex, int gameIndex) {
@@ -156,9 +215,6 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
   void _save() {
     _record.tournamentName = _tournamentNameCtrl.text.trim();
     _record.myDeckName = _myDeckNameCtrl.text;
-    for (int i = 0; i < _record.rounds.length; i++) {
-      // 덱 이름은 각 라운드 위젯에서 직접 업데이트됨
-    }
     Navigator.pop(context, _record);
   }
 
@@ -335,10 +391,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
   }
 
   Widget _buildRoundCard(int roundIndex, RoundRecord round) {
-    final roundOpponentNameCtrl =
-        TextEditingController(text: round.opponentDeckName);
-    roundOpponentNameCtrl
-        .addListener(() => round.opponentDeckName = roundOpponentNameCtrl.text);
+    final collapsed = _collapsedRounds.contains(round);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -360,8 +413,9 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: context.cTint,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(14)),
+              borderRadius: collapsed
+                  ? BorderRadius.circular(14)
+                  : const BorderRadius.vertical(top: Radius.circular(14)),
             ),
             child: Row(
               children: [
@@ -392,164 +446,179 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                     color: context.cInk,
                   ),
                 ),
+                const SizedBox(width: 8),
+                // 접기 / 펴기
+                GestureDetector(
+                  onTap: () => _toggleRoundCollapsed(round),
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        collapsed ? '펴기' : '접기',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      Icon(
+                        collapsed
+                            ? Icons.keyboard_arrow_down_rounded
+                            : Icons.keyboard_arrow_up_rounded,
+                        size: 17,
+                        color: Colors.grey[500],
+                      ),
+                    ],
+                  ),
+                ),
                 const Spacer(),
                 // 라운드 결과 배지
                 _buildResultBadge(round.roundResult),
-                const SizedBox(width: 8),
-                if (_record.rounds.length > 1)
+                if (_record.rounds.length > 1) ...[
+                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => _removeRound(roundIndex),
-                    child: const Icon(Icons.remove_circle_outline,
-                        size: 18, color: Colors.grey),
+                    behavior: HitTestBehavior.opaque,
+                    child: const Padding(
+                      padding: EdgeInsets.all(2),
+                      child: Icon(Icons.remove_circle_outline,
+                          size: 18, color: Colors.grey),
+                    ),
                   ),
+                ],
               ],
             ),
           ),
-          // 라운드 내용
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 상대 덱 이름
-                TextField(
-                  controller: roundOpponentNameCtrl,
-                  style: const TextStyle(fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: '상대 덱 이름 (예: 피카츄 ex)',
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-                    prefixIcon: Icon(Icons.person_outline,
-                        size: 16, color: Colors.grey[400]),
-                    filled: true,
-                    fillColor: context.cFill,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                // 상대 포켓몬 선택
-                Row(
-                  children: [
-                    const Text(
-                      '상대 포켓몬',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => _pickOpponentPokemon(roundIndex),
-                      child: const Text(
-                        '선택',
+          // 라운드 내용 (접힌 상태에서는 숨김)
+          if (!collapsed)
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 상대 포켓몬 선택
+                  Row(
+                    children: [
+                      const Text(
+                        '상대 포켓몬',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFFEF4444),
-                          fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => _pickOpponentPokemon(roundIndex),
+                        child: const Text(
+                          '선택',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFFEF4444),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                PokemonSelectorRow(
-                  selectedIds: round.opponentPokemonIds,
-                  onTap: () => _pickOpponentPokemon(roundIndex),
-                  avatarSize: 40,
-                ),
-                const SizedBox(height: 14),
-                // 게임 결과
-                Row(
-                  children: [
-                    const Text(
-                      '매치 결과',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500),
-                    ),
-                    const Spacer(),
-                    // 게임 수 조절
-                    GestureDetector(
-                      onTap: () => _removeGame(roundIndex),
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: context.cLine,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Icon(Icons.remove, size: 14),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  PokemonSelectorRow(
+                    selectedIds: round.opponentPokemonIds,
+                    onTap: () => _pickOpponentPokemon(roundIndex),
+                    avatarSize: 40,
+                  ),
+                  const SizedBox(height: 14),
+                  // 게임 결과
+                  Row(
+                    children: [
+                      const Text(
+                        '매치 결과',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '${round.games.length}판',
-                        style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _addGame(roundIndex),
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: context.cLine,
-                          borderRadius: BorderRadius.circular(6),
+                      const Spacer(),
+                      // 게임 수 조절
+                      GestureDetector(
+                        onTap: () => _removeGame(roundIndex),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: context.cLine,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(Icons.remove, size: 14),
                         ),
-                        child: const Icon(Icons.add, size: 14),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                // 게임 결과 버튼들 + 범례
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ...round.games.asMap().entries.map((e) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: Column(
-                          children: [
-                            Text(
-                              '${e.key + 1}게임',
-                              style: const TextStyle(
-                                  fontSize: 10, color: Colors.grey),
-                            ),
-                            const SizedBox(height: 4),
-                            GestureDetector(
-                              onTap: () => _toggleGameResult(roundIndex, e.key),
-                              child: _buildGameResultButton(e.value.result),
-                            ),
-                          ],
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          '${round.games.length}판',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w600),
                         ),
-                      );
-                    }),
-                    const Spacer(),
-                    // 범례
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const SizedBox(height: 2),
-                        _buildLegendItem('○', '승', const Color(0xFF22C55E)),
-                        const SizedBox(height: 2),
-                        _buildLegendItem('△', '무', const Color(0xFFF59E0B)),
-                        const SizedBox(height: 2),
-                        _buildLegendItem('✕', '패', const Color(0xFFEF4444)),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+                      ),
+                      GestureDetector(
+                        onTap: () => _addGame(roundIndex),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: context.cLine,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(Icons.add, size: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // 게임 결과 버튼들 + 범례
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...round.games.asMap().entries.map((e) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: Column(
+                            children: [
+                              Text(
+                                '${e.key + 1}게임',
+                                style: const TextStyle(
+                                    fontSize: 10, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 4),
+                              GestureDetector(
+                                onTap: () =>
+                                    _toggleGameResult(roundIndex, e.key),
+                                child: _buildGameResultButton(e.value.result),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      const Spacer(),
+                      // 범례
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const SizedBox(height: 2),
+                          _buildLegendItem(
+                              '○', '승', const Color(0xFF22C55E)),
+                          const SizedBox(height: 2),
+                          _buildLegendItem(
+                              '△', '무', const Color(0xFFF59E0B)),
+                          const SizedBox(height: 2),
+                          _buildLegendItem('✕', '패', const Color(0xFFEF4444)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

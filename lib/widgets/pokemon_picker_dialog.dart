@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../data/pokemon_data.dart';
+import '../utils/hangul_search.dart';
 
 // 세대 정의
 const List<Map<String, dynamic>> _generations = [
@@ -39,8 +40,44 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
   final TextEditingController _searchController = TextEditingController();
   late TabController _tabController;
 
+  /// 전체 도감 (일반 + 메가진화 + 폼)
+  static final List<PokemonInfo> _allEntries = [
+    ...allPokemon,
+    ...megaPokemon,
+    ...ogerponForms,
+  ];
+
   // 탭 인덱스에 따라 필터링된 포켓몬 목록
   List<PokemonInfo> _getFiltered(int tabIndex) {
+    // 검색 중에는 탭과 무관하게 전체 도감(메가진화·폼 포함)에서 찾는다
+    if (_search.trim().isNotEmpty) {
+      final query = _search.trim();
+      final chosungQuery = isChosungSearch(query) ? query : null;
+      final hits = _allEntries
+          .where((p) => matchesPokemonQuery(
+                nameKo: p.nameKo,
+                name: p.name,
+                id: p.id,
+                query: query,
+              ))
+          .toList();
+
+      // 앞에서부터 맞는 것을 먼저 보여준다 (예: 'ㄷㄹ' -> 드래펄트가 메가드래캄보다 위)
+      int rank(PokemonInfo p) {
+        if (chosungQuery != null) {
+          return toChosung(p.nameKo).startsWith(chosungQuery) ? 0 : 1;
+        }
+        return p.nameKo.startsWith(query) ? 0 : 1;
+      }
+
+      hits.sort((a, b) {
+        final c = rank(a).compareTo(rank(b));
+        if (c != 0) return c;
+        return a.id.compareTo(b.id);
+      });
+      return hits;
+    }
+
     final gen = _generations[tabIndex];
     final isMegaTab = gen['kind'] == 'mega';
     final start = (gen['start'] as int?) ?? 0;
@@ -58,15 +95,6 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
           base.insertAll(ogerponIndex + 1, ogerponForms);
         }
       }
-    }
-
-    if (_search.isNotEmpty) {
-      final q = _search.toLowerCase();
-      base = base.where((p) {
-        return p.nameKo.toLowerCase().contains(q) ||
-            p.name.toLowerCase().contains(q) ||
-            p.id.toString() == q;
-      }).toList();
     }
     return base;
   }
@@ -142,7 +170,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: '이름 또는 번호로 검색...',
+                  hintText: '이름 · 초성 · 번호로 검색...',
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
                   prefixIcon:
                       Icon(Icons.search, color: Colors.grey[400], size: 18),
