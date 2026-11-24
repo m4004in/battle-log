@@ -59,13 +59,24 @@ class WinRateReport {
   /// 상대 전체(모든 내 덱 합산)의 상대 덱별 전적
   final Map<String, DeckStat> allOpponents = {};
 
-  static String _keyOf(List<int> ids, String name) {
+  /// 내 덱 구분 키: 스프라이트 조합 우선, 없으면 이름
+  static String _myKeyOf(List<int> ids, String name) {
     if (ids.isNotEmpty) {
       final sorted = List<int>.from(ids)..sort();
       return 'ids:${sorted.join('-')}';
     }
     final trimmed = name.trim().toLowerCase();
     if (trimmed.isNotEmpty) return 'name:$trimmed';
+    return 'unknown';
+  }
+
+  /// 상대 덱 구분 키: 오직 스프라이트 조합으로만.
+  /// (직접 쓴 이름은 분류에 쓰지 않는다)
+  static String _oppKeyOf(List<int> ids) {
+    if (ids.isNotEmpty) {
+      final sorted = List<int>.from(ids)..sort();
+      return 'ids:${sorted.join('-')}';
+    }
     return 'unknown';
   }
 
@@ -76,7 +87,7 @@ class WinRateReport {
         final result = round.roundResult;
         if (result == MatchResult.none) continue;
 
-        final myKey = _keyOf(record.myPokemonIds, record.myDeckName);
+        final myKey = _myKeyOf(record.myPokemonIds, record.myDeckName);
         final myDeck = report.myDecks.firstWhere(
           (d) => d.signature == myKey,
           orElse: () {
@@ -89,30 +100,27 @@ class WinRateReport {
             return d;
           },
         );
-        if (myDeck.deckName.trim().isEmpty && record.myDeckName.trim().isNotEmpty) {
+        if (myDeck.deckName.trim().isEmpty &&
+            record.myDeckName.trim().isNotEmpty) {
           myDeck.deckName = record.myDeckName;
         }
 
-        final oppKey = _keyOf(round.opponentPokemonIds, round.opponentDeckName);
+        final oppKey = _oppKeyOf(round.opponentPokemonIds);
         final opp = myDeck.opponents.putIfAbsent(
           oppKey,
           () => DeckStat(
             signature: oppKey,
             pokemonIds: round.opponentPokemonIds,
-            deckName: round.opponentDeckName,
+            deckName: '',
           ),
         );
-        if (opp.deckName.trim().isEmpty &&
-            round.opponentDeckName.trim().isNotEmpty) {
-          opp.deckName = round.opponentDeckName;
-        }
 
         final allOpp = report.allOpponents.putIfAbsent(
           oppKey,
           () => DeckStat(
             signature: oppKey,
             pokemonIds: round.opponentPokemonIds,
-            deckName: round.opponentDeckName,
+            deckName: '',
           ),
         );
 
@@ -211,8 +219,8 @@ class _WinRateScreenState extends State<WinRateScreen> {
           : Column(
               children: [
                 _buildSummary(context),
-                _buildDeckSelector(context),
-                Expanded(child: _buildOpponentList(context)),
+                if (_report.myDecks.length > 1) _buildDeckSelector(context),
+                Expanded(child: _buildOpponentGrid(context)),
               ],
             ),
     );
@@ -240,7 +248,7 @@ class _WinRateScreenState extends State<WinRateScreen> {
     );
   }
 
-  // ── 상단 요약
+  // ── 상단 요약 (메인 통계 헤더와 같은 결: 숫자 + 라벨 + 구분선)
   Widget _buildSummary(BuildContext context) {
     final shown = _selected < 0 ? null : _report.myDecks[_selected];
     final wins = shown?.wins ?? _report.wins;
@@ -251,72 +259,48 @@ class _WinRateScreenState extends State<WinRateScreen> {
 
     return Container(
       color: context.cSurface,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: rateColor(rate).withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  '${rate.toStringAsFixed(1)}%',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: rateColor(rate),
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                Text(
-                  '승률',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    color: rateColor(rate),
-                  ),
-                ),
-              ],
+          _statCell('${rate.toStringAsFixed(0)}%', '승률', rateColor(rate)),
+          _divider(),
+          _statCell('$wins', '승', const Color(0xFF22C55E)),
+          _divider(),
+          _statCell('$draws', '무', const Color(0xFFF59E0B)),
+          _divider(),
+          _statCell('$loses', '패', const Color(0xFFEF4444)),
+          _divider(),
+          _statCell('$total', '판', context.cInk),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCell(String value, String label, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 17,
+                height: 1.1,
+                fontWeight: FontWeight.w800,
+                color: color,
+                letterSpacing: -0.4,
+              ),
             ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _selected < 0
-                      ? '내 덱 전체'
-                      : (_report.myDecks[_selected].deckName.trim().isNotEmpty
-                          ? _report.myDecks[_selected].deckName.trim()
-                          : '내 덱 ${_selected + 1}'),
-                  style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: context.cInk),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    _miniCount('승', wins, const Color(0xFF16A34A)),
-                    const SizedBox(width: 10),
-                    _miniCount('패', loses, const Color(0xFFDC2626)),
-                    const SizedBox(width: 10),
-                    _miniCount('무', draws, const Color(0xFFD97706)),
-                    const SizedBox(width: 10),
-                    Text(
-                      '총 $total판',
-                      style: TextStyle(fontSize: 12, color: context.cSlate),
-                    ),
-                  ],
-                ),
-              ],
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.1,
+              color: context.cSlate,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -324,22 +308,12 @@ class _WinRateScreenState extends State<WinRateScreen> {
     );
   }
 
-  Widget _miniCount(String label, int value, Color color) {
-    return Text.rich(
-      TextSpan(children: [
-        TextSpan(
-          text: label,
-          style: TextStyle(
-              fontSize: 11.5, fontWeight: FontWeight.w700, color: color),
-        ),
-        TextSpan(
-          text: ' $value',
-          style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-              color: color),
-        ),
-      ]),
+  Widget _divider() {
+    return Container(
+      width: 1,
+      height: 22,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      color: context.cLine,
     );
   }
 
@@ -347,10 +321,10 @@ class _WinRateScreenState extends State<WinRateScreen> {
   Widget _buildDeckSelector(BuildContext context) {
     return Container(
       color: context.cSurface,
-      height: 76,
+      height: 62,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        padding: const EdgeInsets.fromLTRB(12, 2, 12, 10),
         children: [
           _deckChip(
             context,
@@ -383,52 +357,47 @@ class _WinRateScreenState extends State<WinRateScreen> {
   }) {
     final on = _selected == index;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 6),
       child: Material(
-        color: on ? const Color(0xFFEF4444).withValues(alpha: 0.07) : context.cFill,
+        color: on
+            ? const Color(0xFFEF4444).withValues(alpha: 0.06)
+            : Colors.transparent,
         shape: StadiumBorder(
-          side: BorderSide(
-            color: on ? const Color(0xFFEF4444) : context.cBorder,
-            width: on ? 1.6 : 1,
-          ),
+          side: BorderSide(color: on ? const Color(0xFFEF4444) : context.cBorder),
         ),
         child: InkWell(
           customBorder: const StadiumBorder(),
           onTap: () => setState(() => _selected = index),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (ids.isNotEmpty)
-                  SpriteCluster(ids: ids, size: 26, spacing: -8)
+                  SpriteCluster(ids: ids, size: 22, spacing: -7)
                 else
                   Icon(Icons.dashboard_rounded,
-                      size: 18, color: on ? const Color(0xFFEF4444) : context.cSlate),
-                const SizedBox(width: 8),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: on ? const Color(0xFFEF4444) : context.cInk,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      '${rate.toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: rateColor(rate),
-                      ),
-                    ),
-                  ],
+                      size: 16,
+                      color: on ? const Color(0xFFEF4444) : context.cSlate),
+                const SizedBox(width: 7),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: on ? const Color(0xFFEF4444) : context.cInk,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${rate.toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: rateColor(rate),
+                  ),
                 ),
               ],
             ),
@@ -438,8 +407,8 @@ class _WinRateScreenState extends State<WinRateScreen> {
     );
   }
 
-  // ── 상대 덱 목록
-  Widget _buildOpponentList(BuildContext context) {
+  // ── 상대 덱: 한 줄에 3개
+  Widget _buildOpponentGrid(BuildContext context) {
     final opponents = _selected < 0
         ? _report.allOpponentList
         : _report.myDecks[_selected].opponentList;
@@ -453,130 +422,98 @@ class _WinRateScreenState extends State<WinRateScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
-      itemCount: opponents.length + 1,
-      itemBuilder: (ctx, i) {
-        if (i == 0) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              children: [
-                Text(
-                  '상대 덱',
-                  style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                      color: context.cSlate),
-                ),
-                const Spacer(),
-                Text(
-                  '${opponents.length}종',
-                  style: TextStyle(fontSize: 12, color: context.cSlate),
-                ),
-              ],
-            ),
-          );
-        }
-        return _buildOpponentCard(context, opponents[i - 1], i);
-      },
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      physics: const BouncingScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 0.76,
+      ),
+      itemCount: opponents.length,
+      itemBuilder: (ctx, i) => _buildOpponentCard(context, opponents[i]),
     );
   }
 
-  Widget _buildOpponentCard(BuildContext context, DeckStat opp, int rank) {
+  Widget _buildOpponentCard(BuildContext context, DeckStat opp) {
     final color = rateColor(opp.winRate);
-    final title = deckTitle(opp.deckName, opp.pokemonIds);
+    final title = opponentTitle(opp.pokemonIds);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 9),
       decoration: BoxDecoration(
         color: context.cCard,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (opp.pokemonIds.isNotEmpty)
-                SpriteCluster(ids: opp.pokemonIds, size: 40, spacing: -12)
-              else
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: context.cFill,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.help_outline_rounded,
-                      size: 20, color: context.cSlate),
-                ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800,
-                        color: context.cInk,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${opp.wins}승 ${opp.loses}패 ${opp.draws}무',
-                      style: TextStyle(fontSize: 12, color: context.cSlate),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${opp.winRate.toStringAsFixed(0)}%',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
-                      color: color,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  Text(
-                    '${opp.total}판',
-                    style: TextStyle(fontSize: 10.5, color: context.cSlate),
-                  ),
-                ],
-              ),
-            ],
+          const Spacer(),
+          // 스프라이트만 (원/배경 없음)
+          if (opp.pokemonIds.isNotEmpty)
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: SpriteCluster(ids: opp.pokemonIds, size: 32, spacing: -10),
+            )
+          else
+            Icon(Icons.help_outline_rounded, size: 26, color: context.cSlate),
+          const Spacer(),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10.5,
+              height: 1.25,
+              fontWeight: FontWeight.w600,
+              color: context.cSlate,
+            ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
+          Text(
+            '${opp.winRate.toStringAsFixed(0)}%',
+            style: TextStyle(
+              fontSize: 18,
+              height: 1.05,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            opp.draws > 0
+                ? '${opp.wins}-${opp.loses}-${opp.draws}'
+                : '${opp.wins}-${opp.loses}',
+            style: TextStyle(
+              fontSize: 10.5,
+              height: 1.1,
+              fontWeight: FontWeight.w600,
+              color: context.cSlate,
+            ),
+          ),
+          const SizedBox(height: 7),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(2),
             child: Stack(
               children: [
-                Container(height: 6, color: context.cFill),
+                Container(height: 3, color: context.cFill),
                 FractionallySizedBox(
                   widthFactor: (opp.winRate / 100).clamp(0.0, 1.0),
                   child: Container(
-                    height: 6,
+                    height: 3,
                     decoration: BoxDecoration(
                       color: color,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
@@ -589,7 +526,7 @@ class _WinRateScreenState extends State<WinRateScreen> {
   }
 }
 
-/// 포켓몬 스프라이트를 겹쳐서 보여주는 위젯
+/// 포켓몬 스프라이트를 겹쳐서 보여주는 위젯 (원형 배경 없음)
 class SpriteCluster extends StatelessWidget {
   final List<int> ids;
   final double size;
@@ -614,47 +551,31 @@ class SpriteCluster extends StatelessWidget {
       child: Stack(
         children: [
           for (var i = 0; i < shown.length; i++)
-            Positioned(
-              left: step * i,
-              child: _sprite(shown[i], context),
-            ),
+            Positioned(left: step * i, child: _sprite(shown[i])),
         ],
       ),
     );
   }
 
-  Widget _sprite(int id, BuildContext context) {
+  Widget _sprite(int id) {
     final p = pokemonById(id);
     if (p == null) return SizedBox(width: size, height: size);
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: context.cFill,
-        shape: BoxShape.circle,
-        border: Border.all(color: context.cSurface, width: 1.5),
-      ),
-      child: ClipOval(
-        child: Padding(
-          padding: EdgeInsets.all(size * 0.08),
-          child: CachedNetworkImage(
-            imageUrl: p.spriteUrl,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.none,
-            placeholder: (c, u) => const SizedBox.shrink(),
-            errorWidget: (c, u, e) => Icon(
-              Icons.catching_pokemon,
-              size: size * 0.5,
-              color: Colors.grey,
-            ),
-          ),
-        ),
+      child: CachedNetworkImage(
+        imageUrl: p.spriteUrl,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.none,
+        placeholder: (c, u) => const SizedBox.shrink(),
+        errorWidget: (c, u, e) =>
+            Icon(Icons.catching_pokemon, size: size * 0.6, color: Colors.grey),
       ),
     );
   }
 }
 
-/// 덱 이름이 있으면 이름을, 없으면 포켓몬 이름으로 표시 제목을 만든다.
+/// 내 덱 이름: 이름이 있으면 이름, 없으면 포켓몬 이름
 String deckTitle(String deckName, List<int> ids) {
   final name = deckName.trim();
   if (name.isNotEmpty) return name;
@@ -665,5 +586,17 @@ String deckTitle(String deckName, List<int> ids) {
       .whereType<String>()
       .toList();
   if (names.isEmpty) return '이름 없는 덱';
+  return names.join(' · ');
+}
+
+/// 상대 덱 이름: 스프라이트(포켓몬)로만 표시
+String opponentTitle(List<int> ids) {
+  if (ids.isEmpty) return '알 수 없음';
+  final names = ids
+      .take(3)
+      .map((id) => pokemonById(id)?.nameKo)
+      .whereType<String>()
+      .toList();
+  if (names.isEmpty) return '알 수 없음';
   return names.join(' · ');
 }

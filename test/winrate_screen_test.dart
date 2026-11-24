@@ -44,15 +44,15 @@ void main() {
 
     expect(find.text('상대 덱별 승률'), findsOneWidget);
     // 3승 1패 1무 → 60.0%
-    expect(find.text('60.0%'), findsOneWidget);
-    expect(find.text('총 5판'), findsOneWidget);
-    // 내 덱 1개(스프라이트 조합 동일) + 전체 칩
-    expect(find.text('전체'), findsOneWidget);
-    expect(find.text('내 덱 1'), findsOneWidget);
+    expect(find.text('60%'), findsOneWidget);
+    expect(find.text('판'), findsOneWidget);
+    // 내 덱이 1종이면 덱 선택 칩은 숨긴다
+    expect(find.text('전체'), findsNothing);
+    expect(find.text('내 덱 1'), findsNothing);
     // 상대 덱 카드 (이름 없음 → 스프라이트 포켓몬 이름 3판)
     expect(find.text('이상해씨 · 이상해풀 · 이상해꽃'), findsOneWidget);
-    expect(find.text('물덱'), findsOneWidget);
-    expect(find.text('2종'), findsOneWidget); // [7,8,4]는 [4,7,8]과 같은 덱
+    expect(find.text('물덱'), findsNothing);
+    // 상대 덱 2종: [1,2,3] / [4,7,8]==[7,8,4] (이름 '물덱'은 분류에 쓰지 않음)
   });
 
   testWidgets('내 덱 칩을 탭하면 그 덱의 상대 승률로 바뀐다', (tester) async {
@@ -67,13 +67,12 @@ void main() {
 
     await tester.pumpWidget(MaterialApp(home: WinRateScreen(records: records)));
     await tester.pump();
-    expect(find.text('50.0%'), findsOneWidget); // 전체 1승 1패
+    expect(find.text('50%'), findsWidgets); // 요약 + 전체 칩 = 1승 1패
 
     await tester.tap(find.text('A덱'));
     await tester.pump();
 
-    expect(find.text('100.0%'), findsOneWidget);
-    expect(find.text('1종'), findsOneWidget);
+    expect(find.text('100%'), findsWidgets);
     expect(find.text('이상해씨 · 이상해풀 · 이상해꽃'), findsOneWidget);
     expect(find.text('캐터피 · 단데기 · 버터플'), findsNothing);
   });
