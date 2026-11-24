@@ -405,4 +405,115 @@ void main() {
       }
     });
   });
+
+  group('라운드 접힘 상태 유지', () {
+    test('저장/재로딩(JSON 변환) 후에도 접힌 상태가 유지된다', () {
+      final record = _record()
+        ..rounds = [
+          RoundRecord(collapsed: true),
+          RoundRecord(),
+        ];
+
+      final reloaded =
+          TournamentRecord.fromJson(Map<String, dynamic>.from(record.toJson()));
+
+      expect(reloaded.rounds[0].collapsed, isTrue);
+      expect(reloaded.rounds[1].collapsed, isFalse);
+    });
+
+    testWidgets('접힌 라운드는 화면에 다시 들어와도 접힌 채로 보인다', (tester) async {
+      tester.view.physicalSize = const Size(430, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final record = _record()
+        ..rounds = [
+          RoundRecord(opponentPokemonIds: const [25], collapsed: true),
+        ];
+
+      await tester.pumpWidget(
+          MaterialApp(home: RecordEditScreen(record: record, isNew: false)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('펴기'), findsOneWidget);
+      expect(find.text('접기'), findsNothing);
+      // 접힌 상태이므로 내용(게임 결과)은 보이지 않는다
+      expect(find.text('매치 결과'), findsNothing);
+    });
+
+    testWidgets('접은 뒤 저장하면 결과 레코드에 접힘이 담긴다', (tester) async {
+      tester.view.physicalSize = const Size(430, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      TournamentRecord? returned;
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () async {
+                  returned = await Navigator.push<TournamentRecord>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          RecordEditScreen(record: _record(), isNew: false),
+                    ),
+                  );
+                },
+                child: const Text('열기'),
+              ),
+            ),
+          ),
+        ),
+      ));
+
+      await tester.tap(find.text('열기'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await tester.tap(find.text('접기').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      await tester.tap(find.text('저장'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(returned, isNotNull);
+      expect(returned!.rounds.first.collapsed, isTrue);
+    });
+
+    testWidgets('접힌 라운드는 다른 필드를 건드려도 저절로 펴지지 않는다', (tester) async {
+      tester.view.physicalSize = const Size(430, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+          MaterialApp(home: RecordEditScreen(record: _record(), isNew: false)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.tap(find.text('접기').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('펴기'), findsOneWidget);
+
+      // 다른 입력칸을 눌러도 접힘이 풀리지 않아야 한다
+      await tester.tap(find.byType(TextField).first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('펴기'), findsOneWidget);
+      expect(find.text('매치 결과'), findsNothing);
+
+      // '펴기'를 눌러야만 풀린다
+      await tester.tap(find.text('펴기'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('접기'), findsOneWidget);
+      expect(find.text('매치 결과'), findsOneWidget);
+    });
+  });
 }

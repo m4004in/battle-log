@@ -28,9 +28,6 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
   final _myDeckNameCtrl = TextEditingController();
   final _scrollController = ScrollController();
 
-  /// 접힌 라운드들 (라운드 인스턴스를 그대로 키로 사용)
-  final Set<RoundRecord> _collapsedRounds = Set<RoundRecord>.identity();
-
   @override
   void initState() {
     super.initState();
@@ -45,6 +42,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                 opponentDeckName: r.opponentDeckName,
                 opponentPokemonIds: List.from(r.opponentPokemonIds),
                 games: r.games.map((g) => MatchGame(result: g.result)).toList(),
+                collapsed: r.collapsed,
               ))
           .toList(),
       createdAt: widget.record.createdAt,
@@ -172,13 +170,10 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
     }
   }
 
-  /// 라운드 접기/펴기 (라운드 객체 자체를 키로 써서 삭제해도 어긋나지 않게)
+  /// 라운드 접기/펴기 — 상태를 라운드에 저장해서 다시 열어도 유지된다.
+  /// 접기는 오직 '펴기' 버튼으로만 풀린다.
   void _toggleRoundCollapsed(RoundRecord round) {
-    setState(() {
-      if (!_collapsedRounds.remove(round)) {
-        _collapsedRounds.add(round);
-      }
-    });
+    setState(() => round.collapsed = !round.collapsed);
   }
 
   void _toggleGameResult(int roundIndex, int gameIndex) {
@@ -392,7 +387,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
   }
 
   Widget _buildRoundCard(int roundIndex, RoundRecord round) {
-    final collapsed = _collapsedRounds.contains(round);
+    final collapsed = round.collapsed;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),

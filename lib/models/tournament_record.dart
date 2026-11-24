@@ -23,10 +23,14 @@ class RoundRecord {
   List<int> opponentPokemonIds; // 최대 3마리
   List<MatchGame> games; // 게임들 (최소 1, 최대 3)
 
+  /// 라운드 기록을 접어둔 상태 (저장 후 다시 열어도 유지)
+  bool collapsed;
+
   RoundRecord({
     this.opponentDeckName = '',
     List<int>? opponentPokemonIds,
     List<MatchGame>? games,
+    this.collapsed = false,
   })  : opponentPokemonIds = opponentPokemonIds ?? [],
         games = games ?? [MatchGame()];
 
@@ -47,6 +51,7 @@ class RoundRecord {
         'opponentDeckName': opponentDeckName,
         'opponentPokemonIds': opponentPokemonIds,
         'games': games.map((g) => g.toJson()).toList(),
+        'collapsed': collapsed,
       };
 
   factory RoundRecord.fromJson(Map<String, dynamic> json) => RoundRecord(
@@ -55,6 +60,7 @@ class RoundRecord {
         games: (json['games'] as List<dynamic>? ?? [MatchGame().toJson()])
             .map((g) => MatchGame.fromJson(g))
             .toList(),
+        collapsed: json['collapsed'] == true,
       );
 }
 

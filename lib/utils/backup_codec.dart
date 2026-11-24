@@ -27,6 +27,7 @@ class BackupCodec {
                     o.opponentDeckName,
                     o.opponentPokemonIds,
                     o.games.map((g) => g.result.index).join(),
+                    o.collapsed ? 1 : 0,
                   ])
               .toList(),
           r.createdAt.millisecondsSinceEpoch ~/ 60000,
@@ -76,6 +77,7 @@ class BackupCodec {
               opponentDeckName: ro[0] as String,
               opponentPokemonIds: List<int>.from(ro[1] as List),
               games: games.isEmpty ? [MatchGame()] : games,
+              collapsed: ro.length > 3 && (ro[3] as int) == 1,
             );
           }).toList(),
           createdAt: DateTime.fromMillisecondsSinceEpoch((r[6] as int) * 60000),
