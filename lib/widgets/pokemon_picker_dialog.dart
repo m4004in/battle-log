@@ -38,6 +38,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
   late List<int> _selectedIds;
   String _search = '';
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
   late TabController _tabController;
 
   /// 전체 도감 (일반 + 메가진화 + 폼)
@@ -106,9 +107,25 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
     _tabController = TabController(length: _generations.length, vsync: this);
   }
 
+  /// 검색어를 비우고 목록을 전체로 되돌린다.
+  void _clearSearchState() {
+    _searchController.clear();
+    _search = '';
+  }
+
+  /// 검색창에 다시 포커스를 준다. (키보드가 내려가지 않게)
+  void _restoreSearchFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _searchFocus.context != null) {
+        _searchFocus.requestFocus();
+      }
+    });
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -169,6 +186,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: TextField(
                 controller: _searchController,
+                focusNode: _searchFocus,
                 decoration: InputDecoration(
                   hintText: '이름 · 초성 · 번호로 검색...',
                   hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
@@ -179,8 +197,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                           icon: const Icon(Icons.clear,
                               size: 16, color: Colors.grey),
                           onPressed: () {
-                            _searchController.clear();
-                            setState(() => _search = '');
+                            setState(_clearSearchState);
                           },
                         )
                       : null,
@@ -353,6 +370,8 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
       );
     }
     return GridView.builder(
+      // 검색 상태가 바뀌면 새 스크롤뷰를 만들어 스크롤 위치를 맨 위로 되돌린다
+      key: ValueKey('picker-grid-$tabIndex-${_search.isEmpty ? 'all' : 'q'}'),
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
@@ -366,13 +385,21 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
         final isSelected = _selectedIds.contains(p.id);
         return GestureDetector(
           onTap: () {
+            var changed = false;
+            if (isSelected) {
+              _selectedIds.remove(p.id);
+              changed = true;
+            } else if (_selectedIds.length < widget.maxSelect) {
+              _selectedIds.add(p.id);
+              changed = true;
+            }
+            // 포켓몬을 눌러 선택이 바뀌었으면 검색어를 비워
+            // 다음 포켓몬을 바로 이어서 검색할 수 있게 한다.
+            final hadFocus = _searchFocus.hasFocus;
             setState(() {
-              if (isSelected) {
-                _selectedIds.remove(p.id);
-              } else if (_selectedIds.length < widget.maxSelect) {
-                _selectedIds.add(p.id);
-              }
+              if (changed) _clearSearchState();
             });
+            if (changed && hadFocus) _restoreSearchFocus();
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),

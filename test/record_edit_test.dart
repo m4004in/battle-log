@@ -84,6 +84,90 @@ void main() {
       // 'ㄷ' 하나는 초성 검색이 아니므로 드래펄트는 나오지 않는다
       expect(find.text('드래펄트'), findsNothing);
     });
+
+    testWidgets('검색 후 포켓몬을 누르면 검색어가 지워진다', (tester) async {
+      tester.view.physicalSize = const Size(430, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: PokemonPickerDialog(selectedIds: [], maxSelect: 3),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      final field = find.byType(TextField).first;
+      await tester.enterText(field, 'ㄷㄹ');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(tester.widget<TextField>(field).controller!.text, 'ㄷㄹ');
+
+      // 검색 결과에서 드래펄트 선택
+      await tester.tap(find.text('드래펄트'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // 검색창이 비워진다
+      expect(tester.widget<TextField>(field).controller!.text, '');
+      // 선택은 유지된다
+      expect(find.text('선택 완료 (1마리)'), findsOneWidget);
+    });
+
+    testWidgets('검색 중 이미 고른 포켓몬을 다시 눌러 해제해도 검색어가 비워진다', (tester) async {
+      tester.view.physicalSize = const Size(430, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: PokemonPickerDialog(selectedIds: [887], maxSelect: 3),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      final field = find.byType(TextField).first;
+      await tester.enterText(field, 'ㄷㄹ');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.tap(find.text('드래펄트'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.widget<TextField>(field).controller!.text, '');
+      expect(find.text('선택 완료 (선택 없음)'), findsOneWidget);
+    });
+
+    testWidgets('검색하지 않은 상태에서 눌러도 문제없다', (tester) async {
+      tester.view.physicalSize = const Size(430, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: PokemonPickerDialog(selectedIds: [], maxSelect: 3),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // 검색 없이 첫 카드 선택 (이상해씨)
+      await tester.tap(find.text('이상해씨'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('선택 완료 (1마리)'), findsOneWidget);
+      // 검색어는 원래 없었으므로 그대로 비어있다
+      expect(
+        tester.widget<TextField>(find.byType(TextField).first).controller!.text,
+        '',
+      );
+    });
   });
 
   group('라운드 기록', () {
