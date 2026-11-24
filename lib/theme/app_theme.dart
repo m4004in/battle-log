@@ -93,7 +93,7 @@ ThemeData buildLightTheme() => ThemeData(
         brightness: Brightness.light,
       ),
       useMaterial3: true,
-      fontFamily: 'sans-serif',
+      fontFamily: 'NotoSansKR',
       scaffoldBackgroundColor: const Color(0xFFFAFAFA),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
@@ -127,7 +127,7 @@ ThemeData buildDarkTheme() {
     colorScheme: scheme,
     useMaterial3: true,
     brightness: Brightness.dark,
-    fontFamily: 'sans-serif',
+    fontFamily: 'NotoSansKR',
     scaffoldBackgroundColor: _dBg,
     canvasColor: _dSurface,
     cardColor: _dSurface,

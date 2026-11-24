@@ -1,7 +1,7 @@
 name: battle_log
 description: 포켓몬 카드게임 대회 승패 기록 앱
 publish_to: 'none'
-version: 1.1.10+16
+version: 1.1.11+17
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -31,3 +31,11 @@ flutter:
   uses-material-design: true
   assets:
     - assets/bg/bg.png
+  # 한글 폰트를 앱에 내장 → 첫 프레임부터 한글이 바로 보인다 (두부현상 방지)
+  fonts:
+    - family: NotoSansKR
+      fonts:
+        - asset: assets/fonts/NotoSansKR-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansKR-Bold.ttf
+          weight: 700
