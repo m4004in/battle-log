@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../theme/app_theme.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
@@ -1048,8 +1049,12 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(saved > 0
-            ? '$saved개의 대회 로그를 이미지로 저장했습니다.'
-            : '이미지 저장에 실패했습니다. (브라우저에서만 지원됩니다)'),
+            ? (kIsWeb
+                ? '$saved개의 대회 로그를 이미지로 저장했습니다.'
+                : '$saved개의 대회 로그를 저장했습니다. (다운로드/BattleLog 폴더)')
+            : (kIsWeb
+                ? '이미지 저장에 실패했습니다. 다시 시도해 주세요.'
+                : '이미지 저장에 실패했습니다. 저장 공간을 확인해 주세요.')),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),

@@ -633,7 +633,7 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
   /// 접힌 라운드 헤더 오른쪽에 보여줄 상대 포켓몬 스프라이트
   /// (원/배경 없이 스프라이트만, 살짝 겹쳐서)
   Widget _buildCollapsedSprites(BuildContext context, RoundRecord round) {
-    const size = 26.0;
+    const size = 31.0;
 
     return Row(
       key: const Key('collapsed-opp-sprites'),
