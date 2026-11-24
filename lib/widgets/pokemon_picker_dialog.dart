@@ -238,47 +238,64 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                     const SizedBox(width: 8),
                     ..._selectedIds.map((id) {
                       final p = pokemonById(id) ?? allPokemon.first;
+                      // 스프라이트/배지 위치는 예전 그대로 두고,
+                      // 배지의 터치 영역만 24x24 로 넓힌다.
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: CachedNetworkImage(
-                                imageUrl: p.spriteUrl,
-                                width: 38,
-                                height: 38,
-                                fit: BoxFit.contain,
-                                placeholder: (c, u) => Container(
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                left: 0,
+                                bottom: 0,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: CachedNetworkImage(
+                                    imageUrl: p.spriteUrl,
                                     width: 38,
                                     height: 38,
-                                    color: context.cBorder),
-                                errorWidget: (c, u, e) => const Icon(
-                                    Icons.catching_pokemon,
-                                    size: 18,
-                                    color: Colors.grey),
-                              ),
-                            ),
-                            Positioned(
-                              top: -4,
-                              right: -4,
-                              child: GestureDetector(
-                                onTap: () =>
-                                    setState(() => _selectedIds.remove(id)),
-                                child: Container(
-                                  width: 14,
-                                  height: 14,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFEF4444),
-                                    shape: BoxShape.circle,
+                                    fit: BoxFit.contain,
+                                    placeholder: (c, u) => Container(
+                                        width: 38,
+                                        height: 38,
+                                        color: context.cBorder),
+                                    errorWidget: (c, u, e) => const Icon(
+                                        Icons.catching_pokemon,
+                                        size: 18,
+                                        color: Colors.grey),
                                   ),
-                                  child: const Icon(Icons.close,
-                                      size: 10, color: Colors.white),
                                 ),
                               ),
-                            ),
-                          ],
+                              Positioned(
+                                left: 23,
+                                top: 1,
+                                child: GestureDetector(
+                                  key: ValueKey('remove-selected-$id'),
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () =>
+                                      setState(() => _selectedIds.remove(id)),
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: Center(
+                                      child: Container(
+                                        width: 14,
+                                        height: 14,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFEF4444),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close,
+                                            size: 10, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }),

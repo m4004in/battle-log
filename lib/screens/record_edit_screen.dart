@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import '../models/tournament_record.dart';
@@ -473,6 +474,11 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
                   ),
                 ),
                 const Spacer(),
+                // 접힌 상태에서도 선택한 상대 포켓몬이 보이도록 (칸 오른쪽)
+                if (collapsed && round.opponentPokemonIds.isNotEmpty) ...[
+                  _buildCollapsedSprites(context, round),
+                  const SizedBox(width: 10),
+                ],
                 // 라운드 결과 배지
                 _buildResultBadge(round.roundResult),
                 if (_record.rounds.length > 1) ...[
@@ -621,6 +627,34 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  /// 접힌 라운드 헤더 오른쪽에 보여줄 상대 포켓몬 스프라이트
+  /// (원/배경 없이 스프라이트만, 살짝 겹쳐서)
+  Widget _buildCollapsedSprites(BuildContext context, RoundRecord round) {
+    const size = 26.0;
+
+    return Row(
+      key: const Key('collapsed-opp-sprites'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final id in round.opponentPokemonIds.take(3))
+          Align(
+            widthFactor: 0.72,
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: CachedNetworkImage(
+                imageUrl: pokemonById(id)?.spriteUrl ?? '',
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.none,
+                placeholder: (c, u) => const SizedBox.shrink(),
+                errorWidget: (c, u, e) => const SizedBox.shrink(),
+              ),
+            ),
+          ),
+      ],
     );
   }
 

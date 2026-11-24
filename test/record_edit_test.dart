@@ -170,6 +170,131 @@ void main() {
     });
   });
 
+  group('접힌 라운드 스프라이트', () {
+    testWidgets('접으면 선택한 상대 포켓몬 스프라이트가 헤더에 보인다', (tester) async {
+      tester.view.physicalSize = const Size(430, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final record = _record();
+      record.rounds = [
+        RoundRecord(opponentPokemonIds: const [25, 6, 9]),
+      ];
+
+      await tester.pumpWidget(
+          MaterialApp(home: RecordEditScreen(record: record, isNew: true)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // 펼친 상태에서는 헤더 스프라이트 없음
+      expect(find.byKey(const Key('collapsed-opp-sprites')), findsNothing);
+
+      await tester.tap(find.text('접기'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byKey(const Key('collapsed-opp-sprites')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('좁은 화면에서도 접힌 헤더에 스프라이트가 넘침 없이 보인다', (tester) async {
+      for (final size in [const Size(360, 1400), const Size(375, 1400)]) {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        final record = _record();
+        record.rounds = [
+          RoundRecord(opponentPokemonIds: const [887, 6, 1000]),
+          RoundRecord(opponentPokemonIds: const [25, 26, 27]),
+        ];
+
+        await tester.pumpWidget(
+            MaterialApp(home: RecordEditScreen(record: record, isNew: true)));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+
+        await tester.tap(find.text('접기').first);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(tester.takeException(), isNull, reason: '$size 넘침 없음');
+        expect(find.byKey(const Key('collapsed-opp-sprites')),
+            findsAtLeastNWidgets(1));
+      }
+    });
+
+    testWidgets('상대 포켓몬이 없으면 접어도 스프라이트 영역이 없다', (tester) async {
+      tester.view.physicalSize = const Size(430, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final record = _record();
+      record.rounds = [RoundRecord()];
+
+      await tester.pumpWidget(
+          MaterialApp(home: RecordEditScreen(record: record, isNew: true)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.tap(find.text('접기'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byKey(const Key('collapsed-opp-sprites')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('선택된 포켓몬 X 버튼', () {
+    testWidgets('아이콘은 그대로, 터치 영역만 넓어져 살짝 빗나가도 삭제된다', (tester) async {
+      tester.view.physicalSize = const Size(430, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: PokemonPickerDialog(selectedIds: [25], maxSelect: 3),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // 선택된 피카츄의 X 버튼 (다이얼로그 닫기 버튼과 구분)
+      final removeBtn = find.byKey(const ValueKey('remove-selected-25'));
+      expect(removeBtn, findsOneWidget);
+
+      // X 배지 중심에서 살짝 벗어난 지점을 눌러도 삭제되어야 한다 (터치 영역 확대)
+      final center = tester.getCenter(removeBtn);
+      await tester.tapAt(center + const Offset(9, 9));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('선택 완료 (선택 없음)'), findsOneWidget);
+    });
+
+    testWidgets('X 아이콘 크기는 10으로 유지된다', (tester) async {
+      tester.view.physicalSize = const Size(430, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: PokemonPickerDialog(selectedIds: [25], maxSelect: 3),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      final icon = tester.widget<Icon>(find.descendant(
+        of: find.byKey(const ValueKey('remove-selected-25')),
+        matching: find.byIcon(Icons.close),
+      ));
+      expect(icon.size, 10);
+    });
+  });
+
   group('라운드 기록', () {
     testWidgets('상대 덱 이름 입력칸이 없다', (tester) async {
       tester.view.physicalSize = const Size(430, 900);
