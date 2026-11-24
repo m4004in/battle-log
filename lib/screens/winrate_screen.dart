@@ -30,15 +30,36 @@ int compareDeckStat(DeckStat a, DeckStat b) {
   return b.winRate.compareTo(a.winRate);
 }
 
-/// 스프라이트가 1개 이상 겹치는 덱끼리 서로 옆에 붙도록 이어서 정렬한다.
+/// 스프라이트가 1개 이상 겹치는 덱끼리 한 묶음으로 모아서 이어 붙인다.
 /// (같은 덱인데 카드 몇 장만 다른 덱들을 모아 보기 편하게)
 /// - 입력은 이미 [compareDeckStat] 순으로 정렬되어 있다고 본다.
-/// - 겹치는 덱들끼리 한 그룹(연결 요소)으로 묶은 뒤,
-///   그룹 순서는 그룹에서 가장 앞선(= 가장 많이 만난) 덱 순서를 따르고,
-///   그룹 내부는 앞 덱과 겹치는 개수가 가장 많은 덱을 계속 이어 붙인다.
+/// - 겹침 여부만으로 묶는다. (승률/판수는 묶는 기준에 전혀 쓰지 않는다)
 List<DeckStat> clusterBySpriteOverlap(List<DeckStat> sorted) {
+  final out = <DeckStat>[];
+  for (final cluster in clusterOpponents(sorted)) {
+    out.addAll(cluster.decks);
+  }
+  return out;
+}
+
+/// 상대 덱 묶음 하나 (스프라이트를 1개 이상 공유하는 덱들의 모임)
+class DeckCluster {
+  final List<DeckStat> decks;
+
+  /// 묶음 안에서 2개 이상의 덱이 공유하는 스프라이트 (많이 겹치는 순)
+  final List<int> sharedIds;
+
+  DeckCluster(this.decks, this.sharedIds);
+
+  bool get isGrouped => decks.length > 1;
+}
+
+/// 겹치는 스프라이트를 기준으로 덱을 묶음(cluster) 단위로 나눈다.
+/// 묶음 순서: 덱이 많은 묶음 → 그 안에서 가장 많이 만난 덱이 앞선 묶음.
+/// 묶음 내부: 앞 덱과 스프라이트가 가장 많이 겹치는 덱을 계속 이어 붙인다.
+List<DeckCluster> clusterOpponents(List<DeckStat> sorted) {
   final n = sorted.length;
-  if (n <= 1) return sorted;
+  if (n == 0) return const [];
 
   final sets = [for (final d in sorted) d.pokemonIds.toSet()];
 
@@ -69,20 +90,26 @@ List<DeckStat> clusterBySpriteOverlap(List<DeckStat> sorted) {
     }
   }
 
-  final groups = <int, List<int>>{};
+  final byRoot = <int, List<int>>{};
   for (var i = 0; i < n; i++) {
-    groups.putIfAbsent(find(i), () => <int>[]).add(i);
+    byRoot.putIfAbsent(find(i), () => <int>[]).add(i);
   }
 
-  final roots = groups.keys.toList()
-    ..sort((a, b) => groups[a]!.first.compareTo(groups[b]!.first));
+  // 묶음 순서: 덱 수 많은 순 → 그 묶음의 첫 덱(= 가장 많이 만난 덱) 순서
+  final roots = byRoot.keys.toList()
+    ..sort((a, b) {
+      final c = byRoot[b]!.length.compareTo(byRoot[a]!.length);
+      if (c != 0) return c;
+      return byRoot[a]!.first.compareTo(byRoot[b]!.first);
+    });
 
-  final out = <DeckStat>[];
+  final result = <DeckCluster>[];
   for (final root in roots) {
-    final remaining = List<int>.from(groups[root]!);
-    var last = remaining.removeAt(0);
-    out.add(sorted[last]);
-    var lastSet = sets[last];
+    final remaining = List<int>.from(byRoot[root]!);
+    final ordered = <int>[];
+    var current = remaining.removeAt(0);
+    ordered.add(current);
+    var lastSet = sets[current];
     while (remaining.isNotEmpty) {
       var bestPos = 0;
       var bestOverlap = -1;
@@ -93,12 +120,31 @@ List<DeckStat> clusterBySpriteOverlap(List<DeckStat> sorted) {
           bestPos = k;
         }
       }
-      last = remaining.removeAt(bestPos);
-      lastSet = sets[last];
-      out.add(sorted[last]);
+      current = remaining.removeAt(bestPos);
+      lastSet = sets[current];
+      ordered.add(current);
     }
+
+    // 묶음 안에서 공유되는 스프라이트 (2개 이상 덱이 가진 것만)
+    final counts = <int, int>{};
+    for (final idx in ordered) {
+      for (final id in sets[idx]) {
+        counts[id] = (counts[id] ?? 0) + 1;
+      }
+    }
+    final shared = counts.entries.where((e) => e.value > 1).map((e) => e.key).toList()
+      ..sort((a, b) {
+        final c = counts[b]!.compareTo(counts[a]!);
+        if (c != 0) return c;
+        return a.compareTo(b);
+      });
+
+    result.add(DeckCluster(
+      [for (final idx in ordered) sorted[idx]],
+      shared.take(3).toList(),
+    ));
   }
-  return out;
+  return result;
 }
 
 /// 내 덱 하나 + 그 덱이 만난 상대 덱들
@@ -114,6 +160,12 @@ class MyDeckStat extends DeckStat {
   List<DeckStat> get opponentList {
     final list = opponents.values.toList()..sort(compareDeckStat);
     return clusterBySpriteOverlap(list);
+  }
+
+  /// 겹치는 스프라이트 기준 묶음
+  List<DeckCluster> get opponentClusters {
+    final list = opponents.values.toList()..sort(compareDeckStat);
+    return clusterOpponents(list);
   }
 }
 
@@ -232,6 +284,12 @@ class WinRateReport {
   List<DeckStat> get allOpponentList {
     final list = allOpponents.values.toList()..sort(compareDeckStat);
     return clusterBySpriteOverlap(list);
+  }
+
+  /// 겹치는 스프라이트 기준 묶음 (전체)
+  List<DeckCluster> get allOpponentClusters {
+    final list = allOpponents.values.toList()..sort(compareDeckStat);
+    return clusterOpponents(list);
   }
 }
 
@@ -475,13 +533,15 @@ class _WinRateScreenState extends State<WinRateScreen> {
     );
   }
 
-  // ── 상대 덱: 한 줄에 4개 (겹치는 스프라이트 덱끼리 이웃 배치)
-  Widget _buildOpponentGrid(BuildContext context) {
-    final opponents = _selected < 0
-        ? _report.allOpponentList
-        : _report.myDecks[_selected].opponentList;
+  // ── 상대 덱: 한 줄에 4개 / 스프라이트가 겹치는 덱은 한 묶음으로 표기
+  static const int kOpponentColumns = 4;
 
-    if (opponents.isEmpty) {
+  Widget _buildOpponentGrid(BuildContext context) {
+    final clusters = _selected < 0
+        ? _report.allOpponentClusters
+        : _report.myDecks[_selected].opponentClusters;
+
+    if (clusters.isEmpty) {
       return Center(
         child: Text(
           '상대 기록이 없어요',
@@ -490,33 +550,86 @@ class _WinRateScreenState extends State<WinRateScreen> {
       );
     }
 
-    const columns = 4;
+    const columns = kOpponentColumns;
     const gap = 8.0;
     const maxContentWidth = 720.0;
     const minCardHeight = 128.0;
     const maxCardHeight = 154.0;
+    const groupPad = 3.0;
+    const groupBorder = 1.0;
+    const groupExtra = (groupPad + groupBorder) * 2;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         final sidePad = ((width - maxContentWidth) / 2).clamp(12.0, 999.0);
-        final cardWidth =
-            (width - sidePad * 2 - gap * (columns - 1)) / columns;
+        // 묶음 박스 여백까지 감안해서 카드 폭을 잡는다 (넘침 방지)
+        final available = width - sidePad * 2 - groupExtra;
+        final cardWidth = (available - gap * (columns - 1)) / columns;
         final cardHeight =
             (cardWidth / 0.63).clamp(minCardHeight, maxCardHeight);
-        final aspect = cardWidth / cardHeight;
 
-        return GridView.builder(
+        final blocks = <Widget>[];
+        for (var ci = 0; ci < clusters.length; ci++) {
+          final cluster = clusters[ci];
+          final decks = cluster.decks;
+          final grouped = cluster.isGrouped;
+          final pad = grouped ? groupPad : 0.0;
+          final border = grouped ? groupBorder : 0.0;
+          final perRow = decks.length < columns ? decks.length : columns;
+          final blockWidth =
+              perRow * cardWidth + (perRow - 1) * gap + (pad + border) * 2;
+
+          final rows = <Widget>[];
+          for (var start = 0; start < decks.length; start += columns) {
+            final slice = decks.skip(start).take(columns).toList();
+            if (start > 0) rows.add(const SizedBox(height: gap));
+            rows.add(
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < slice.length; i++) ...[
+                    if (i > 0) const SizedBox(width: gap),
+                    SizedBox(
+                      width: cardWidth,
+                      height: cardHeight,
+                      child: _buildOpponentCard(context, slice[i]),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          }
+
+          blocks.add(
+            Container(
+              key: Key('opp-cluster-$ci'),
+              width: blockWidth,
+              padding: EdgeInsets.all(pad),
+              decoration: grouped
+                  ? BoxDecoration(
+                      color: context.cFill.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: context.cBorder, width: border),
+                    )
+                  : null,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: rows,
+              ),
+            ),
+          );
+        }
+
+        return SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(sidePad, 10, sidePad, 24),
           physics: const BouncingScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            mainAxisSpacing: gap,
-            crossAxisSpacing: gap,
-            childAspectRatio: aspect,
+          child: Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: blocks,
           ),
-          itemCount: opponents.length,
-          itemBuilder: (ctx, i) => _buildOpponentCard(context, opponents[i]),
         );
       },
     );
@@ -527,6 +640,7 @@ class _WinRateScreenState extends State<WinRateScreen> {
     final title = opponentTitle(opp.pokemonIds);
 
     return Container(
+      key: Key('opp-card-${opp.signature}'),
       padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
       decoration: BoxDecoration(
         color: context.cCard,
