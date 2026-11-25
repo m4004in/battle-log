@@ -19,6 +19,7 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="포켓몬 카드게임 대회 승패 기록 앱">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -33,8 +34,76 @@
 
   <title>Battle Log</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- 한글 폰트: 앱이 뜨기 전에 미리 받아둔다 -->
+  <link rel="preload" href="assets/assets/fonts/NotoSansKR-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="assets/assets/fonts/NotoSansKR-Bold.ttf" as="font" type="font/ttf" crossorigin>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #FAFAFA;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #boot-splash {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #FAFAFA;
+      z-index: 9999;
+      transition: opacity 180ms ease-out;
+    }
+    #boot-splash.hide { opacity: 0; pointer-events: none; }
+    /* 스피너: 폰트 없이 그려지므로 두부현상과 무관하다 */
+    #boot-splash .spinner {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 3px solid #E5E7EB;
+      border-top-color: #EF4444;
+      animation: bootspin 800ms linear infinite;
+    }
+    @keyframes bootspin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
+  <div id="boot-splash"><div class="spinner"></div></div>
+  <script>
+    // Flutter 첫 프레임이 그려지면 스플래시를 걷어낸다.
+    (function () {
+      var splash = document.getElementById('boot-splash');
+      var hidden = false;
+      function hideSplash() {
+        if (hidden || !splash) return;
+        hidden = true;
+        splash.classList.add('hide');
+        setTimeout(function () {
+          if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 220);
+      }
+      // flutter-view(또는 canvaskit 캔버스)가 실제로 그려지면 감춘다
+      function check() {
+        if (hidden) return;
+        var view = document.querySelector('flutter-view, flt-glass-pane, flt-scene-host');
+        if (view) {
+          // 첫 프레임 이후 레이아웃이 잡히도록 한 틱 더 기다린다
+          requestAnimationFrame(function () {
+            requestAnimationFrame(hideSplash);
+          });
+          return;
+        }
+        requestAnimationFrame(check);
+      }
+      requestAnimationFrame(check);
+      // 안전장치: 8초 뒤엔 무조건 감춘다
+      setTimeout(hideSplash, 8000);
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
