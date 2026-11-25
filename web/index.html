@@ -56,7 +56,7 @@
       justify-content: center;
       background: #FAFAFA;
       z-index: 9999;
-      transition: opacity 180ms ease-out;
+      transition: opacity 200ms ease-out;
     }
     #boot-splash.hide { opacity: 0; pointer-events: none; }
     /* 스피너: 폰트 없이 그려지므로 두부현상과 무관하다 */
@@ -74,34 +74,45 @@
 <body>
   <div id="boot-splash"><div class="spinner"></div></div>
   <script>
-    // Flutter 첫 프레임이 그려지면 스플래시를 걷어낸다.
     (function () {
       var splash = document.getElementById('boot-splash');
-      var hidden = false;
-      function hideSplash() {
-        if (hidden || !splash) return;
-        hidden = true;
+      var removed = false;
+      var signalReceived = false;
+
+      function removeSplash() {
+        if (removed || !splash) return;
+        removed = true;
         splash.classList.add('hide');
         setTimeout(function () {
           if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
-        }, 220);
+        }, 260);
       }
-      // flutter-view(또는 canvaskit 캔버스)가 실제로 그려지면 감춘다
-      function check() {
-        if (hidden) return;
+
+      // ── 1) Dart(Flutter) 신호: 폰트 등록 + 첫 프레임 이후 호출된다 ──
+      window.blBootReady = function () {
+        signalReceived = true;
+        removeSplash();
+      };
+
+      // ── 2) 보조 감지: 신호가 오지 않는 비정상 상황에서만 작동한다.
+      //      (뷰가 생겼다고 바로 걷으면 폰트가 준비되기 전 프레임이 노출되어
+      //       두부현상이 다시 생기므로, 충분히 기다린 뒤에만 걷는다)
+      function pollView() {
+        if (removed) return;
         var view = document.querySelector('flutter-view, flt-glass-pane, flt-scene-host');
-        if (view) {
-          // 첫 프레임 이후 레이아웃이 잡히도록 한 틱 더 기다린다
+        if (view && Date.now() - start > 6000) {
           requestAnimationFrame(function () {
-            requestAnimationFrame(hideSplash);
+            requestAnimationFrame(removeSplash);
           });
           return;
         }
-        requestAnimationFrame(check);
+        requestAnimationFrame(pollView);
       }
-      requestAnimationFrame(check);
-      // 안전장치: 8초 뒤엔 무조건 감춘다
-      setTimeout(hideSplash, 8000);
+      var start = Date.now();
+      requestAnimationFrame(pollView);
+
+      // ── 3) 안전장치: 12초 뒤엔 무조건 걷는다 ──
+      setTimeout(removeSplash, 12000);
     })();
   </script>
   <script src="flutter_bootstrap.js" async></script>

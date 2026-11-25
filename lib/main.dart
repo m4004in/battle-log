@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'providers/tournament_provider.dart';
 import 'screens/home_screen.dart';
 import 'theme/app_theme.dart';
+import 'utils/boot_signal.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,13 +21,26 @@ void main() {
 /// 글자가 네모(두부)로 보인다. 로드가 끝난 뒤에 화면을 그리게 해서 막는다.
 Future<void> _preloadKoreanFont() async {
   const family = 'NotoSansKR';
-  try {
+  const assets = [
+    'assets/fonts/NotoSansKR-Regular.ttf',
+    'assets/fonts/NotoSansKR-Bold.ttf',
+  ];
+
+  Future<void> loadOnce() async {
     final loader = FontLoader(family);
-    loader.addFont(rootBundle.load('assets/fonts/NotoSansKR-Regular.ttf'));
-    loader.addFont(rootBundle.load('assets/fonts/NotoSansKR-Bold.ttf'));
+    for (final a in assets) {
+      loader.addFont(rootBundle.load(a));
+    }
     await loader.load();
+  }
+
+  try {
+    await loadOnce().timeout(const Duration(seconds: 4));
   } catch (_) {
-    // 폰트 로드 실패해도 앱은 떠야 한다
+    // 실패/지연되면 한 번 더 시도하되, 그래도 안 되면 그냥 진행한다.
+    try {
+      await loadOnce();
+    } catch (_) {}
   }
 }
 
@@ -62,7 +79,10 @@ class BattleLogApp extends StatelessWidget {
   }
 }
 
-/// 폰트 로딩이 끝날 때까지 흰 배경만 보여준다 (두부 노출 방지).
+/// 폰트 로딩이 끝날 때까지 앱 화면을 그리지 않는다 (두부 노출 방지).
+///
+/// HTML 쪽 부팅 스플래시가 이미 화면을 덮고 있으므로, 여기서는 같은 색 배경만
+/// 칠하다가 준비가 끝나면 실제 화면으로 바꾼다.
 class _StartupGate extends StatefulWidget {
   const _StartupGate({required this.child, this.ready});
 
@@ -75,6 +95,7 @@ class _StartupGate extends StatefulWidget {
 
 class _StartupGateState extends State<_StartupGate> {
   bool _done = false;
+  bool _signaled = false;
 
   @override
   void initState() {
@@ -82,11 +103,29 @@ class _StartupGateState extends State<_StartupGate> {
     final ready = widget.ready;
     if (ready == null) {
       _done = true;
+      _scheduleSignal();
       return;
     }
     ready.whenComplete(() {
-      if (mounted) setState(() => _done = true);
+      if (!mounted) return;
+      setState(() => _done = true);
+      _scheduleSignal();
     });
+  }
+
+  /// 첫 프레임이 실제로 그려진 뒤에 HTML 스플래시를 걷는다.
+  /// (폰트가 등록된 상태의 프레임만 노출되도록 보장)
+  void _scheduleSignal() {
+    if (_signaled) return;
+    _signaled = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      // 다음 프레임까지 한 번 더 기다려 폰트 적용 프레임을 보장한다
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        signalBootReady();
+      });
+    });
+    // setState 이후 프레임을 요청한다
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   @override
