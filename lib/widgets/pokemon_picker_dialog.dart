@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'pokemon_sprite.dart';
 import '../data/pokemon_data.dart';
 import '../utils/hangul_search.dart';
 
@@ -41,7 +41,7 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
   final FocusNode _searchFocus = FocusNode();
   late TabController _tabController;
 
-  /// 전체 도감 (일반 + 메가진화 + 폼)
+  /// 전체 도감 (일반 + 메가진화 + 폼). allPokemon 맨 앞에 0번 해머가 포함된다.
   static final List<PokemonInfo> _allEntries = [
     ...allPokemon,
     ...megaPokemon,
@@ -97,6 +97,9 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
         }
       }
     }
+    // 0번(해머 등 앱 전용 카드)은 어느 탭에서든 맨 앞에 둔다.
+    base.removeWhere((p) => p.id == hammerTool.id);
+    base.insert(0, hammerTool);
     return base;
   }
 
@@ -252,11 +255,10 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                                 bottom: 0,
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(6),
-                                  child: CachedNetworkImage(
-                                    imageUrl: p.spriteUrl,
+                                  child: PokemonSprite(
+                                    url: p.spriteUrl,
                                     width: 38,
                                     height: 38,
-                                    fit: BoxFit.contain,
                                     placeholder: (c, u) => Container(
                                         width: 38,
                                         height: 38,
@@ -436,11 +438,10 @@ class _PokemonPickerDialogState extends State<PokemonPickerDialog>
                 Stack(
                   alignment: Alignment.topRight,
                   children: [
-                    CachedNetworkImage(
-                      imageUrl: p.spriteUrl,
+                    PokemonSprite(
+                      url: p.spriteUrl,
                       width: 48,
                       height: 48,
-                      fit: BoxFit.contain,
                       placeholder: (c, u) => const SizedBox(
                         width: 48,
                         height: 48,

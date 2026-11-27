@@ -16,6 +16,7 @@ import 'folder_screen.dart';
 import 'winrate_screen.dart';
 import '../widgets/masonry_list.dart';
 import '../widgets/backup_dialogs.dart';
+import '../widgets/pokemon_sprite.dart';
 import '../widgets/folder_picker_sheet.dart';
 import '../utils/image_saver.dart';
 
@@ -770,11 +771,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 배경 없는 도트 스프라이트 (픽셀 선명하게)
   Widget _buildSprite(String url, {double size = 44}) {
-    return CachedNetworkImage(
-      imageUrl: url,
+    return PokemonSprite(
+      url: url,
       width: size,
       height: size,
-      fit: BoxFit.contain,
       filterQuality: FilterQuality.none,
       placeholder: (c, u) => SizedBox(width: size, height: size),
       errorWidget: (c, u, e) => SizedBox(
@@ -1071,11 +1071,12 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 화면 밖에 카드를 그려서 PNG로 캡처
   Future<Uint8List?> _captureRecord(TournamentRecord r) async {
     // 스프라이트 미리 로드
+    // 내장(에셋) 스프라이트는 이미 즉시 로드되므로 네트워크 사전로딩에서 뺀다.
     final urls = <String>{
       ..._pokemonOf(r.myPokemonIds).map((p) => p.spriteUrl),
       for (final round in r.rounds)
         ..._pokemonOf(round.opponentPokemonIds).map((p) => p.spriteUrl),
-    };
+    }.where((u) => !PokemonSprite.isAsset(u)).toSet();
     await Future.wait(urls.map((u) async {
       try {
         await precacheImage(CachedNetworkImageProvider(u), context)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:battle_log/data/pokemon_data.dart';
 import 'package:battle_log/models/tournament_record.dart';
 import 'package:battle_log/screens/record_edit_screen.dart';
 import 'package:battle_log/widgets/pokemon_picker_dialog.dart';
@@ -514,6 +515,78 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('접기'), findsOneWidget);
       expect(find.text('매치 결과'), findsOneWidget);
+    });
+  });
+
+  group('해머(0번 도구 카드)', () {
+    test('데이터에 0번 해머가 있고 이름/스프라이트가 지정되어 있다', () {
+      final hammer = pokemonById(0);
+      expect(hammer, isNotNull);
+      expect(hammer!.nameKo, '해머');
+      expect(hammer.name, 'hammer');
+      expect(hammer.displayNumber, '0');
+      expect(hammer.spriteUrl, 'assets/sprites/hammer_96.png');
+      // 도감 목록 맨 앞
+      expect(allPokemon.first.id, 0);
+    });
+
+    testWidgets("'해머'로 검색하면 결과에 나온다", (tester) async {
+      tester.view.physicalSize = const Size(430, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: PokemonPickerDialog(selectedIds: [], maxSelect: 3),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.enterText(find.byType(TextField).first, '해머');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // 검색어 입력칸(컨트롤러)까지 잡히므로 카드 라벨만 센다
+      expect(find.text('해머'), findsNWidgets(2));
+      expect(find.byKey(const ValueKey('picker-grid-0-q')), findsOneWidget);
+    });
+
+    testWidgets('검색어 없이 열어도 0번 해머가 맨 앞에 보인다', (tester) async {
+      tester.view.physicalSize = const Size(430, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: PokemonPickerDialog(selectedIds: [], maxSelect: 3),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('해머'), findsOneWidget);
+    });
+
+    testWidgets('해머를 선택하면 selectedIds 에 0이 들어간다', (tester) async {
+      tester.view.physicalSize = const Size(430, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: PokemonPickerDialog(selectedIds: [], maxSelect: 3),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      await tester.tap(find.text('해머'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // 선택됨 미리보기에 해머가 표시된다
+      expect(find.byKey(const ValueKey('remove-selected-0')), findsOneWidget);
     });
   });
 }

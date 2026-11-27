@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import '../widgets/pokemon_sprite.dart';
 import '../theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import '../models/tournament_record.dart';
@@ -640,8 +640,8 @@ class _RecordEditScreenState extends State<RecordEditScreen> {
             child: SizedBox(
               width: size,
               height: size,
-              child: CachedNetworkImage(
-                imageUrl: pokemonById(id)?.spriteUrl ?? '',
+              child: PokemonSprite(
+                url: pokemonById(id)?.spriteUrl ?? '',
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.none,
                 placeholder: (c, u) => const SizedBox.shrink(),

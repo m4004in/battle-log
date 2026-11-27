@@ -8,6 +8,10 @@ class PokemonInfo {
   /// 픽셀 스프라이트가 없는 폼은 다른 그림으로 대신 표시한다.
   final bool useHomeArt;
 
+  /// 앱에 내장된 스프라이트를 쓰는 항목이면 에셋 경로를 지정한다.
+  /// (예: 직접 만든 '해머' 도구 카드)
+  final String? assetSprite;
+
   const PokemonInfo({
     required this.id,
     required this.name,
@@ -15,17 +19,30 @@ class PokemonInfo {
     this.imageId,
     this.displayNumber,
     this.useHomeArt = false,
+    this.assetSprite,
   });
 
-  String get imageUrl =>
+  String get imageUrl => assetSprite ??
       'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${imageId ?? id}.png';
 
-  String get spriteUrl => useHomeArt
-      ? 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${imageId ?? id}.png'
-      : 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${imageId ?? id}.png';
+  String get spriteUrl => assetSprite ??
+      (useHomeArt
+          ? 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${imageId ?? id}.png'
+          : 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${imageId ?? id}.png');
 }
 
+/// 앱 전용 도구 카드 (도감 번호 0번, 목록 맨 앞)
+/// 이름 검색: '해머'
+const PokemonInfo hammerTool = PokemonInfo(
+  id: 0,
+  name: 'hammer',
+  nameKo: '해머',
+  displayNumber: '0',
+  assetSprite: 'assets/sprites/hammer_96.png',
+);
+
 const List<PokemonInfo> allPokemon = [
+  hammerTool,
   // 1세대 (1~151)
   PokemonInfo(id: 1, name: 'bulbasaur', nameKo: '이상해씨'),
   PokemonInfo(id: 2, name: 'ivysaur', nameKo: '이상해풀'),
@@ -1082,7 +1099,13 @@ const List<PokemonInfo> ogerponForms = [  PokemonInfo(id: 32273, name: 'ogerpon-
 
 /// id -> 포켓몬 빠른 조회 (목록을 매번 훑지 않도록)
 final Map<int, PokemonInfo> _pokemonIndex = {
-  for (final p in [...allPokemon, ...megaPokemon, ...ogerponForms]) p.id: p,
+  for (final p in <PokemonInfo>[
+    hammerTool,
+    ...allPokemon,
+    ...megaPokemon,
+    ...ogerponForms,
+  ])
+    p.id: p,
 };
 
 PokemonInfo? pokemonById(int id) => _pokemonIndex[id];

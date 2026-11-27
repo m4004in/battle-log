@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../data/pokemon_data.dart';
 import '../models/tournament_record.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pokemon_sprite.dart';
 
 /// 덱 한 개의 전적
 class DeckStat {
@@ -618,9 +618,8 @@ class SpriteCluster extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: CachedNetworkImage(
-        imageUrl: p.spriteUrl,
-        fit: BoxFit.contain,
+      child: PokemonSprite(
+        url: p.spriteUrl,
         filterQuality: FilterQuality.none,
         placeholder: (c, u) => const SizedBox.shrink(),
         errorWidget: (c, u, e) =>

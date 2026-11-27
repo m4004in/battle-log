@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'pokemon_sprite.dart';
 import '../data/pokemon_data.dart';
 
 class PokemonAvatarRow extends StatelessWidget {
@@ -48,8 +48,8 @@ class PokemonAvatarRow extends StatelessWidget {
         border: Border.all(color: context.cBorder, width: 1),
       ),
       child: ClipOval(
-        child: CachedNetworkImage(
-          imageUrl: p.spriteUrl,
+        child: PokemonSprite(
+          url: p.spriteUrl,
           fit: BoxFit.contain,
           placeholder: (c, u) => const Center(
             child: SizedBox(
@@ -142,8 +142,8 @@ class PokemonSelectorRow extends StatelessWidget {
                               width: 1.5),
                         ),
                         child: ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: p.spriteUrl,
+                          child: PokemonSprite(
+                            url: p.spriteUrl,
                             fit: BoxFit.contain,
                             placeholder: (c, u) => const SizedBox(
                               child: Center(
