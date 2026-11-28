@@ -36,15 +36,13 @@ class PokemonSprite extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isAsset(url)) {
       // 내장 스프라이트는 즉시 로드되므로 placeholder 가 필요 없다.
-      // 사진풍 이미지를 픽셀 도트처럼 다루면 계단현상이 생기므로 부드럽게 처리한다.
+      // 내장 스프라이트도 도트로 그려져 있어 네트워크 스프라이트와 같은 필터를 쓴다.
       return Image.asset(
         url,
         width: width,
         height: height,
         fit: fit,
-        filterQuality: filterQuality == FilterQuality.none
-            ? FilterQuality.medium
-            : filterQuality,
+        filterQuality: filterQuality,
         errorBuilder: (c, e, s) => errorWidget?.call(c, url, e) ??
             const SizedBox.shrink(),
       );
